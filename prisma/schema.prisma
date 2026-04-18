@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String    @id @default(cuid())
+  user_name                String
+  email                    String    @unique
+  password                 String
+  phone_number             String? // Optional phone number
+  is_phone_verified        Boolean?  @default(false) // Phone verification status
+  role                     Role
+  lastLoginAt              DateTime? // Last login timestamp
+  refresh_token_hash       String? // Hashed refresh token
+  refresh_token_expires_at DateTime? // Refresh token expiration time
+  is_deleted               Boolean?  @default(false) // Active status for soft delete
+  deleted_at               DateTime? // Soft delete timestamp
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  projects                 Project[]
+}
+
+model Project {
+  id                  String       @id @default(cuid())
+  project_name        String
+  project_description String?
+  apiKey              String       @unique
+  isActive            Boolean      @default(true) // enable/disable project
+  userId              String
+  user                User         @relation(fields: [userId], references: [id])
+  services            Service[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  requestLogs         RequestLog[]
+}
+
+model Service {
+  id        String      @id @default(cuid())
+  type      ServiceType
+  isActive  Boolean     @default(true)
+  config    Json? // store service-specific settings
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model RequestLog {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  serviceType ServiceType
+
+  status LogStatus // SUCCESS / FAILED
+
+  requestData  Json? // phone, message, etc.
+  responseData Json? // Twilio response
+
+  error String? // error message if failed
+
+  createdAt DateTime @default(now())
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILED
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+}
+
+enum ServiceType {
+  SMS
+  EMAIL
+}
