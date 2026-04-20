@@ -17,42 +17,76 @@ model User {
   user_name                String
   email                    String    @unique
   password                 String
-  phone_number             String? // Optional phone number
-  is_phone_verified        Boolean?  @default(false) // Phone verification status
+  phone_number             String?
+  is_phone_verified        Boolean?  @default(false)
   role                     Role
-  lastLoginAt              DateTime? // Last login timestamp
-  refresh_token_hash       String? // Hashed refresh token
-  refresh_token_expires_at DateTime? // Refresh token expiration time
-  is_deleted               Boolean?  @default(false) // Active status for soft delete
-  deleted_at               DateTime? // Soft delete timestamp
+  lastLoginAt              DateTime?
+  refresh_token_hash       String?
+  refresh_token_expires_at DateTime?
+  is_deleted               Boolean?  @default(false)
+  deleted_at               DateTime?
   created_at               DateTime  @default(now())
   updated_at               DateTime  @updatedAt
-  projects                 Project[]
+
+  projects Project[]
 }
 
 model Project {
-  id                  String       @id @default(cuid())
+  id                  String  @id @default(cuid())
   project_name        String
   project_description String?
-  apiKey              String       @unique
-  isActive            Boolean      @default(true) // enable/disable project
-  userId              String
-  user                User         @relation(fields: [userId], references: [id])
-  services            Service[]
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  requestLogs         RequestLog[]
+  isActive            Boolean @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  services Service[]
+  apiKeys  ApiKey[] // 🔥 NEW
+
+  requestLogs RequestLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Service {
-  id        String      @id @default(cuid())
-  type      ServiceType
-  isActive  Boolean     @default(true)
-  config    Json? // store service-specific settings
+  id       String      @id @default(cuid())
+  type     ServiceType
+  isActive Boolean     @default(true)
+  config   Json?
+
   projectId String
-  project   Project     @relation(fields: [projectId], references: [id])
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  project   Project @relation(fields: [projectId], references: [id])
+
+  apiKeys ApiKey[] // 🔥 Link API keys to service
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, type]) // 🚀 Prevent duplicate services per project
+}
+
+model ApiKey {
+  id String @id @default(cuid())
+
+  keyHash  String @unique // 🔐 store hashed key only
+  lastFour String // for UI display
+
+  serviceType ServiceType // SMS / EMAIL
+  isActive    Boolean     @default(true)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  requestLogs RequestLog[]
+
+  @@index([projectId])
+  @@index([serviceType])
 }
 
 model RequestLog {
@@ -63,14 +97,21 @@ model RequestLog {
 
   serviceType ServiceType
 
-  status LogStatus // SUCCESS / FAILED
+  apiKeyId String? // 🔥 Track which key used
+  apiKey   ApiKey? @relation(fields: [apiKeyId], references: [id])
 
-  requestData  Json? // phone, message, etc.
-  responseData Json? // Twilio response
+  status LogStatus
 
-  error String? // error message if failed
+  requestData  Json?
+  responseData Json?
+
+  error String?
 
   createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([serviceType])
+  @@index([createdAt])
 }
 
 enum LogStatus {

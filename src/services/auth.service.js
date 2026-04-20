@@ -6,39 +6,33 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 
-export const loginUser = async ({ email, password }) => {
+export const loginService = async ({ email, password }) => {
+
   const user = await prisma.user.findUnique({
     where: { email },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      password: true,
-    },
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new Error("Invalid credentials");
+  }
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) throw new Error("Invalid password");
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  const accessToken = await generateAccessToken({
-    id: user.id,
-    role: user.role,
-    email: user.email,
-  });
-  const refreshToken = await generateRefreshToken({
-    id: user.id,
-    role: user.role,
-    email: user.email,
-  });
+  if (!isPasswordValid) {
+    throw new Error("Password is incorrect");
+  }
 
-  // 💾 store in DB
+  // ✅ Generate tokens
+  const accessToken = await generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user);
+
+  // 🔐 Store hashed refresh token
+  const hash = await bcrypt.hash(refreshToken, 12);
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      refresh_token_hash: await bcrypt.hash(refreshToken, 10),
-      refresh_token_expires_at: null
+      refresh_token_hash: hash,
     },
   });
 
@@ -73,41 +67,70 @@ export const createSuperAdminService = async ({
   });
 };
 
-export const refreshAccessByToken = async ({ refreshToken }) => {
-  const payload = await verifyRefreshToken(refreshToken);
-  if (!payload) {
-    throw new Error("Invalid refresh token");
+export const refreshService = async ({ refreshToken }) => {
+  if (!refreshToken) {
+    throw new Error("Refresh token required");
   }
 
-  const user = await prisma.user.findFirst({
-    where: { id: payload.sub },
+  // 🔐 Verify token
+  let payload;
+  try {
+    payload = await verifyRefreshToken(refreshToken);
+  } catch {
+    throw new Error("Invalid or expired refresh token");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.id },
   });
 
   if (!user || !user.refresh_token_hash) {
-    throw new Error("Refresh session not found");
+    throw new Error("Session not found");
   }
 
-  // 🔐 Compare hashed token
-  const isMatch = await bcrypt.compare(refreshToken, user.refresh_token_hash);
+  // 🔍 Compare token with stored hash
+  const isMatch = await bcrypt.compare(
+    refreshToken,
+    user.refresh_token_hash
+  );
 
+  // 🚨 Token reuse detection
   if (!isMatch) {
-    throw new Error("Refresh token does not match current session");
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refresh_token_hash: null },
+    });
+
+    throw new Error("Refresh token reuse detected");
   }
 
-  // ✅ Generate new access token
-  const tokens = {
-    accessToken: await generateAccessToken(user),
-    refreshToken: await generateRefreshToken(user),
-  };
+  // ✅ Generate new tokens
+  const newAccessToken = await generateAccessToken(user);
+  const newRefreshToken = await generateRefreshToken(user);
 
-  return tokens;
+  // 🔄 Rotate refresh token
+  const newHash = await bcrypt.hash(newRefreshToken, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refresh_token_hash: newHash,
+    },
+  });
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  };
 };
 
-export const logoutService = async (userId) => {
+export const logoutService = async ( userId ) => {
   await prisma.user.update({
     where: { id: userId },
     data: {
       refresh_token_hash: null,
     },
   });
+
+  return { message: "Logged out successfully" };
 };

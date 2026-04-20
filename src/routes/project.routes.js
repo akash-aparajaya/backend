@@ -8,7 +8,7 @@ const router = express.Router();
 router.post(
   "/create-project",
   verifyToken,
-  allowRoles("ADMIN"),
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
   createProject
 );
 

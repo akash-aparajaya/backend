@@ -1,13 +1,14 @@
 import {
-  loginUser,
+  loginService,
   createSuperAdminService,
-    refreshAccessByToken,
+    refreshService,
+    logoutService
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
 export const login = async (req, res) => {
   try {
-    const data = await loginUser({
+    const data = await loginService({
       email: req.body.email,
       password: req.body.password,
     });
@@ -31,12 +32,27 @@ export const createSuperAdmin = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;  // Get the refresh token from the request body
 
-    const tokens = await refreshAccessByToken({ refreshToken }); // Call the refreshAccessByToken function
+const refreshToken =
+  req.cookies?.refreshToken ||
+  req.body.refreshToken ||
+  req.headers["x-refresh-token"];
 
+    const tokens = await refreshService({ refreshToken }); 
+    
     return successResponse(res, tokens, "Tokens refreshed successfully", 200);
   } catch (err) {
     errorResponse(res, err.message);
   }
 };
+
+export const logout = async (req, res) => {
+  try {
+    const userId = req.query.id;   
+    await logoutService(userId);
+    return successResponse(res, null, "Logout successful", 200);
+  } catch (err) {
+    errorResponse(res, err.message);
+  }
+};
+
