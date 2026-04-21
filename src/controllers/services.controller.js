@@ -1,6 +1,7 @@
 import * as smsService from "../services/twilio.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { smsQueue } from "../queues/sms.queue.js";
+import { emailQueue } from "../queues/email.queue.js";
 
 
 export const sendSmsController = async (req, res) => {
@@ -35,7 +36,7 @@ export const sendEmailController = async (req, res) => {
   if (!to || !subject || !message) {
     return res.status(400).json({
       success: false,
-      message: "Missing fields",
+      message: "to, subject and message required",
     });
   }
 
@@ -48,7 +49,7 @@ export const sendEmailController = async (req, res) => {
       projectId: req.project.id,
     },
     {
-      jobId: `${req.project.id}-${to}-${subject}`, // prevent duplicates
+      jobId: `${req.project.id}-${to}-${subject}-${message}`, // prevent duplicates
     }
   );
 

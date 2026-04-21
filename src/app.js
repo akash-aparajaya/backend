@@ -8,18 +8,38 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 
+import { createBullBoard } from "@bull-board/api";
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { ExpressAdapter } from "@bull-board/express";
+
+//queue imports
+import { smsQueue } from "./queues/sms.queue.js";
+import { emailQueue } from "./queues/email.queue.js";
+
 dotenv.config();
 
 const app = express();
+
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath("/admin/queues");
+
+createBullBoard({
+  queues: [new BullMQAdapter(emailQueue), new BullMQAdapter(smsQueue)],
+  serverAdapter,
+});
+
+app.use("/admin/queues", serverAdapter.getRouter());
 
 /* ---------------- SECURITY ---------------- */
 app.use(helmet()); // Secure HTTP headers
 
 /* ---------------- CORS ---------------- */
-app.use(cors({
-  origin: "*", // change this in production
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*", // change this in production
+    credentials: true,
+  }),
+);
 
 /* ---------------- BODY PARSER ---------------- */
 app.use(express.json());
@@ -36,7 +56,7 @@ if (process.env.NODE_ENV === "development") {
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
   max: 100, // limit each IP
-  message: "Too many requests, please try again later"
+  message: "Too many requests, please try again later",
 });
 app.use(limiter);
 

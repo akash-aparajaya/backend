@@ -1,36 +1,41 @@
 import app from "./app.js";
 import prisma from "./config/prisma.js";
-
-// Workers
-import "./workers/sms.worker.js";
-import "./workers/email.worker.js";
+import logger from "./utils/logger.js";
+import { redisConnection } from "./config/redis.js";
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    // DB
     await prisma.$connect();
-    console.log("🟢 Database connected");
+    logger.verbose("💾 Database connected");
 
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    // Redis (strong check)
+    await redisConnection.ping();
+    logger.verbose("⚡ Redis connected");
+
+    // Server
+    app.listen(PORT, () => {
+      logger.verbose(`🚀 Server running on port http://localhost:${PORT}`);
     });
 
   } catch (error) {
-    console.error("🔴 Failed to start server:", error);
+    logger.error("🔴 Failed to start server:", error);
     process.exit(1);
   }
 };
 
 // Graceful shutdown
 const shutdown = async () => {
-  console.log("🛑 Shutting down server...");
+  logger.warn("🛑 Shutting down server...");
   try {
     await prisma.$disconnect();
-    console.log("🔌 Database disconnected");
+    await redisConnection.quit();
+    logger.warn("🔌 Clean shutdown complete");
     process.exit(0);
   } catch (error) {
-    console.error("Error during shutdown:", error);
+    logger.error("Error during shutdown:", error);
     process.exit(1);
   }
 };
@@ -38,13 +43,12 @@ const shutdown = async () => {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-// Global error handling
 process.on("uncaughtException", (err) => {
-  console.error("💥 Uncaught Exception:", err);
+  logger.error("💥 Uncaught Exception:", err);
 });
 
 process.on("unhandledRejection", (err) => {
-  console.error("💥 Unhandled Rejection:", err);
+  logger.error("💥 Unhandled Rejection:", err);
 });
 
 startServer();
