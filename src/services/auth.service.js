@@ -32,6 +32,7 @@ export const loginService = async ({ email, password }) => {
   await prisma.user.update({
     where: { id: user.id },
     data: {
+      lastLoginAt: new Date(),
       refresh_token_hash: hash,
     },
   });

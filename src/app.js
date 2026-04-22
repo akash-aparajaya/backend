@@ -46,11 +46,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ---------------- LOGGER ---------------- */
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-} else {
+
   app.use(morgan("combined"));
-}
+
 
 /* ---------------- RATE LIMIT ---------------- */
 const limiter = rateLimit({
