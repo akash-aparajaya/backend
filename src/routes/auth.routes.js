@@ -16,7 +16,7 @@ const router = express.Router();
 router.post("/create-super-admin", createSuperAdmin);
 
 /* -------- LOGIN -------- */
-router.post("/login", login);
+router.post("/login", login);       
 
 /* -------- REFRESH TOKEN -------- */
 router.post("/refresh-token", refreshAccessToken);
