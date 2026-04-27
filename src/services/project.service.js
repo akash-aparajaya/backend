@@ -3,18 +3,18 @@ import { generateApiKey } from "../utils/apiKey.js";
 import { SERVICE_CONFIG } from "../config/service.config.js";
 
 
-export const createProjectService = async ({ name, services, userId }) => {
+export const createProjectService = async ({ project_name, services, project_description, userId }) => {
   return await prisma.$transaction(async (tx) => {
     
     // ✅ 1. Validate input
-    if (!name || !services || !Array.isArray(services) || services.length === 0) {
+    if (!project_name || !services || !Array.isArray(services) || services.length === 0) {
       throw new Error("Project name and services are required");
     }
 
     // ✅ 2. Create Project
     const project = await tx.project.create({
       data: {
-        project_name: name,
+        project_name,
         userId,
       },
     });
@@ -72,5 +72,18 @@ export const createProjectService = async ({ name, services, userId }) => {
       },
       services: responseKeys,
     };
+  });
+};
+
+export const getAllProjects = async () => {
+  return await prisma.project.findMany({
+    select: {
+      id: true,
+      project_name: true,
+      project_description: true,
+      createdAt: true, // Double-check if there is a 'd' in your schema
+      // services: true,  // Don't forget your services array!
+      isActive: true
+    },
   });
 };
