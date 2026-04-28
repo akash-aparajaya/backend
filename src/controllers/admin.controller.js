@@ -4,9 +4,10 @@ import { successResponse, errorResponse } from "../utils/response.js";
 
 export const createAdmin = async (req, res) => {
   try {
-     const { user_name, email, password } = req.body;
+    const data = req.body
+     const { name, email, password ,role} = data;
 
-    const admin = await createAdminService({ user_name, email, password });
+    const admin = await createAdminService({ name, email, password ,role});
     return successResponse(res, admin, "Admin created successfully", 201);
   } catch (err) {
     return errorResponse(res, err.message, 400);

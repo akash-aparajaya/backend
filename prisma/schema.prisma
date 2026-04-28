@@ -26,6 +26,7 @@ model User {
 
   resetToken       String?
   resetTokenExpiry DateTime?
+  is_active        Boolean?  @default(true)
   is_deleted       Boolean?  @default(false)
   deleted_at       DateTime?
   created_at       DateTime  @default(now())

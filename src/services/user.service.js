@@ -7,9 +7,27 @@ export const createUser = async (data) => {
 };
 
 export const getAllUsers = async () => {
-  return await prisma.user.findMany();
-};
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      is_active: true,
+      created_at: true,
+    },
+  });
 
+  // Use .map() to format every user in the list
+  return users.map((user) => ({
+    id: user.id,
+    name: user.user_name,
+    email: user.email,
+    role: user.role,
+    joined: user.created_at,
+    active: user.is_active,
+  }));
+};
 export const getUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { id },
@@ -18,16 +36,19 @@ export const getUserById = async (id) => {
       user_name: true,
       email: true,
       role: true,
-      is_deleted: true
+      is_deleted: true,
     },
   });
 };
 
 export const getStatsData = async () => {
-  const [adminCount,  activeProjects] = await Promise.all([
+  const [adminCount, activeProjects] = await Promise.all([
     prisma.user.count({
       where: {
-        role: "ADMIN",
+        OR: [
+      { role: "ADMIN" },
+      { role: "SUPER_ADMIN" }
+    ],
         is_deleted: false,
       },
     }),
