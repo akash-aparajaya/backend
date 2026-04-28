@@ -23,10 +23,13 @@ model User {
   lastLoginAt              DateTime?
   refresh_token_hash       String?
   refresh_token_expires_at DateTime?
-  is_deleted               Boolean?  @default(false)
-  deleted_at               DateTime?
-  created_at               DateTime  @default(now())
-  updated_at               DateTime  @updatedAt
+
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  is_deleted       Boolean?  @default(false)
+  deleted_at       DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 
   projects Project[]
 }

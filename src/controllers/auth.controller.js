@@ -2,7 +2,9 @@ import {
   loginService,
   createSuperAdminService,
     refreshService,
-    logoutService
+    logoutService, 
+    forgotPasswordService,
+    resetPasswordService
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -51,6 +53,26 @@ export const logout = async (req, res) => {
     const userId = req.query.id;   
     await logoutService(userId);
     return successResponse(res, null, "Logout successful", 200);
+  } catch (err) {
+    errorResponse(res, err.message);
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await forgotPasswordService({ email });
+    return successResponse(res, null, "Password reset link sent successfully", 200);
+  } catch (err) {
+    errorResponse(res, err.message);
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    await resetPasswordService( token, password );
+    return successResponse(res, null, "Password reset successful", 200);
   } catch (err) {
     errorResponse(res, err.message);
   }
