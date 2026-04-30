@@ -3,6 +3,12 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
+// =============================================================================
+// Prisma Schema
+// Database: PostgreSQL
+// Project: Multi-service, Multi-provider, Multi-environment Management Platform
+// =============================================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,123 +18,499 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                       String    @id @default(cuid())
-  user_name                String
-  email                    String    @unique
-  password                 String
-  phone_number             String?
-  is_phone_verified        Boolean?  @default(false)
-  role                     Role
-  lastLoginAt              DateTime?
-  refresh_token_hash       String?
-  refresh_token_expires_at DateTime?
+// =============================================================================
+// ENUMS
+// =============================================================================
 
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  is_active        Boolean?  @default(true)
-  is_deleted       Boolean?  @default(false)
-  deleted_at       DateTime?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-
-  projects Project[]
+/// User role — controls what the user can do inside the platform
+/// ADMIN  → full access: create projects, environments, manage providers
+/// VIEWER → read-only access: can view projects and logs, cannot edit
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
 }
 
-model Project {
-  id                  String  @id @default(cuid())
-  project_name        String
-  project_description String?
-  isActive            Boolean @default(true)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  services Service[]
-  apiKeys  ApiKey[] // 🔥 NEW
-
-  requestLogs RequestLog[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Service {
-  id       String      @id @default(cuid())
-  type     ServiceType
-  isActive Boolean     @default(true)
-  config   Json?
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id])
-
-  apiKeys ApiKey[] // 🔥 Link API keys to service
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([projectId, type]) // 🚀 Prevent duplicate services per project
-}
-
-model ApiKey {
-  id String @id @default(cuid())
-
-  keyHash  String @unique // 🔐 store hashed key only
-  lastFour String // for UI display
-
-  serviceType ServiceType // SMS / EMAIL
-  isActive    Boolean     @default(true)
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id])
-
-  serviceId String
-  service   Service @relation(fields: [serviceId], references: [id])
-
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  requestLogs RequestLog[]
-
-  @@index([projectId])
-  @@index([serviceType])
-}
-
-model RequestLog {
-  id String @id @default(cuid())
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id])
-
-  serviceType ServiceType
-
-  apiKeyId String? // 🔥 Track which key used
-  apiKey   ApiKey? @relation(fields: [apiKeyId], references: [id])
-
-  status LogStatus
-
-  requestData  Json?
-  responseData Json?
-
-  error String?
-
-  createdAt DateTime @default(now())
-
-  @@index([projectId])
-  @@index([serviceType])
-  @@index([createdAt])
-}
-
-enum LogStatus {
+/// Status of each API request logged in request_logs
+/// PENDING → request is queued or in progress (safety net for queue crash)
+/// SUCCESS → provider responded successfully
+/// FAILED  → provider returned an error (retryCount will be incremented)
+enum RequestStatus {
+  PENDING
   SUCCESS
   FAILED
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
+// =============================================================================
+// TABLE 1 — service_types
+//
+// Global master table. Defines ALL service categories on the platform.
+// Examples: Email, SMS, Push Notification, Payment, Storage
+//
+// Seeded once by the platform team.
+// Users never create or edit this — they only SELECT from it.
+// =============================================================================
+
+model ServiceType {
+  id String @id @default(cuid())
+
+  /// Human-readable name shown in UI
+  /// e.g. "Email", "SMS", "Payment"
+  name String @unique
+
+  /// URL-safe slug used in auto-generated endpoints
+  /// e.g. "email", "sms", "payment"
+  slug String @unique
+
+  /// Optional description shown in the environment setup UI
+  description String?
+
+  /// Set false to hide this service from the environment setup screen
+  isActive Boolean @default(true)
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All providers that belong to this service
+  /// e.g. Email → [SendGrid, Mailgun, AWS SES]
+  providers Provider[]
+
+  /// All environment-level configs that use this service
+  environmentServiceProviders EnvironmentServiceProvider[]
+
+  @@map("service_types")
 }
 
-enum ServiceType {
-  SMS
-  EMAIL
+// =============================================================================
+// TABLE 2 — providers
+//
+// Global master table. Each ServiceType has multiple Providers.
+//
+// Examples:
+//   ServiceType = "Email" → [SendGrid, Mailgun, AWS SES]
+//   ServiceType = "SMS"   → [Twilio, MSG91, Vonage]
+//
+// Seeded once by the platform team.
+// Users never create or edit this — they only SELECT from it.
+//
+// KEY FIELDS:
+//
+//   requiredCredentialSchema
+//     A JSON object that tells the frontend what credential input
+//     fields to show when the user configures this provider.
+//     Example for SendGrid:
+//       { "fields": ["api_key", "from_email"] }
+//     Example for Twilio:
+//       { "fields": ["account_sid", "auth_token", "from_number"] }
+//     The frontend loops over "fields" and renders an input for each.
+//
+//   baseEndpoint
+//     A URL template that the system uses to auto-generate the
+//     final endpoint when the user saves a provider config.
+//     The system replaces {env} with the environment slug at save time.
+//     Example:
+//       baseEndpoint = "/api/{env}/email/sendgrid"
+//       environment.slug = "prod"
+//       → generated endpoint = "/api/prod/email/sendgrid"
+// =============================================================================
+
+model Provider {
+  id String @id @default(cuid())
+
+  /// The service category this provider belongs to (FK → service_types)
+  serviceTypeId String
+  serviceType   ServiceType @relation(fields: [serviceTypeId], references: [id])
+
+  /// Human-readable provider name shown in UI
+  /// e.g. "SendGrid", "Twilio", "MSG91"
+  name String
+
+  /// URL-safe slug used in endpoint generation
+  /// e.g. "sendgrid", "twilio", "msg91"
+  slug String @unique
+
+  /// JSON schema that drives the dynamic credential form on the frontend.
+  /// Shape: { "fields": ["field_name_1", "field_name_2"] }
+  /// Do NOT store actual credentials here — only the field names/schema.
+  requiredCredentialSchema Json
+
+  /// Endpoint template. {env} is replaced by environment slug at save time.
+  /// Example: "/api/{env}/email/sendgrid"
+  baseEndpoint String
+
+  /// Set false to prevent users from selecting this provider
+  isActive Boolean @default(true)
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All environment-level configs that use this provider
+  environmentServiceProviders EnvironmentServiceProvider[]
+
+  @@map("providers")
+}
+
+model EnvironmentList {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// =============================================================================
+// TABLE 3 — users
+//
+// Central auth entity. One user owns many projects.
+//
+// AUTH RULES:
+//   - Password   → bcrypt hashed before storage. NEVER store plain text.
+//   - resetToken → hashed before storage. Check expiry before allowing reset.
+//   - refresh_token_hash → hashed JWT refresh token for token rotation.
+//   - Soft delete → set is_deleted = true + populate deleted_at. Never DELETE.
+// =============================================================================
+
+model User {
+  id String @id @default(cuid())
+
+  /// Unique login email — used as the identifier
+  email String @unique
+
+  /// Bcrypt hashed password — NEVER store plain text
+  password String
+
+  /// Display name shown in the UI
+  user_name String
+
+  /// ADMIN = full access | VIEWER = read-only
+  role UserRole @default(ADMIN)
+
+  /// Optional phone number (used for 2FA or contact)
+  phone_number String?
+
+  /// True after the user verifies their phone via OTP
+  is_phone_verified Boolean @default(false)
+
+  /// Soft delete flag — set to true instead of deleting the row
+  is_deleted Boolean @default(false)
+
+  /// False = account is suspended or disabled
+  is_active Boolean @default(true)
+
+  /// Hashed token for the "forgot password" flow
+  /// Check resetTokenExpiry before accepting a reset request
+  resetToken String?
+
+  /// Expiry for the reset token — reject if DateTime.now() > this value
+  resetTokenExpiry DateTime?
+
+  /// Hashed JWT refresh token — updated on every login
+  refresh_token_hash String?
+
+  /// Expiry for the refresh token
+  refresh_token_expires_at DateTime?
+
+  /// Timestamp of the most recent successful login
+  lastLoginAt DateTime?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  /// Populated when is_deleted is set to true — for audit purposes
+  deleted_at DateTime?
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All projects owned by this user
+  projects Project[]
+
+  @@map("users")
+}
+
+// =============================================================================
+// TABLE 4 — projects
+//
+// Top-level container created by the user.
+// Groups multiple environments (dev, uat, prod) under one product/app.
+//
+// CHANGES FROM OLD SCHEMA:
+//   + Added image_url (user uploads a logo at project creation)
+//   - Removed service checkbox selection at project level
+//     Services are now selected per environment during environment setup.
+//   - Removed projectServices relation (table deleted)
+//   - Removed apiKeys relation (API key moved into environments table)
+//   - Removed requestLogs relation (logs now linked via environment)
+// =============================================================================
+
+model Project {
+  id String @id @default(cuid())
+
+  /// The user who owns this project (FK → users)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  /// Name of the project shown in the dashboard
+  /// e.g. "AcmeCorp App", "MyStartup Backend"
+  project_name String
+
+  /// Optional description of what this project does
+  project_description String?
+
+  /// URL of the project logo uploaded by the user at project creation
+  /// Stored as a path or CDN URL (e.g. "/uploads/acme-logo.png")
+  image_url String?
+
+  /// Set false to soft-disable the project without deleting it
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All environments under this project
+  /// e.g. Development, UAT, Production
+  environments Environment[]
+
+  @@map("projects")
+}
+
+// =============================================================================
+// TABLE 5 — environments
+//
+// Created by the user under a project.
+// Each environment is completely isolated — its own provider configs + API key.
+//
+// Examples:
+//   name="Development"  slug="dev"   → endpoint prefix: /api/dev/...
+//   name="UAT"          slug="uat"   → endpoint prefix: /api/uat/...
+//   name="Production"   slug="prod"  → endpoint prefix: /api/prod/...
+//
+// USER NAMES ENVIRONMENTS FREELY — no master list, no predefined options.
+// The slug is used in auto-generated endpoint paths.
+//
+// API KEY SECURITY:
+//   The platform auto-generates one API key per environment at creation time.
+//   The full key is shown to the user ONCE and never stored.
+//   Only the bcrypt hash + last 4 characters are persisted.
+//
+//   At runtime (when client sends a request):
+//     1. Extract the API key from the request header
+//     2. Bcrypt compare it against apiKeyHash
+//     3. If match → identify the environment and route the request
+// =============================================================================
+
+model Environment {
+  id String @id @default(cuid())
+
+  /// The project this environment belongs to (FK → projects)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  /// Display name — user types this freely
+  /// e.g. "Production", "Development", "QA", "Demo"
+  name String
+
+  /// URL-safe slug — used in auto-generated endpoint paths
+  /// e.g. "prod", "dev", "uat"
+  /// Must be unique within the same project
+  slug String
+
+  /// Bcrypt hash of the auto-generated API key
+  /// The actual key is NEVER stored — only this hash
+  /// Use bcrypt.compare(incomingKey, apiKeyHash) at runtime
+  apiKeyHash String @unique
+
+  /// Last 4 characters of the API key — shown in the UI for identification
+  /// e.g. if key is "sk-live-xxxxxxxxxxa3Kx" → lastFour = "a3Kx"
+  apiKeyLastFour String
+
+  /// Set false to disable this environment (blocks all incoming requests)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All service+provider configurations set up inside this environment
+  environmentServiceProviders EnvironmentServiceProvider[]
+
+  /// All API request logs scoped to this environment
+  requestLogs RequestLog[]
+
+  /// Slug must be unique within the same project
+  /// Cannot have two "prod" environments under the same project
+  @@unique([projectId, slug])
+  @@map("environments")
+}
+
+// =============================================================================
+// TABLE 6 — environment_service_providers  ← CORE CONFIG TABLE
+//
+// This is the most important table in the system.
+// It stores EXACTLY what the platform needs at runtime to route each
+// API request to the correct provider with the correct credentials.
+//
+// HOW A ROW GETS CREATED (during environment setup in the UI):
+//   1. User opens an environment and clicks a service (e.g. "Email")
+//   2. System shows all active providers for that service (from providers table)
+//   3. User selects a provider (e.g. "SendGrid")
+//   4. Frontend renders credential input fields using Provider.requiredCredentialSchema
+//   5. User fills in the credentials
+//   6. User clicks Save
+//   7. Application layer:
+//        a. Encrypts the credentials using AES-256
+//        b. Auto-generates endpoint by replacing {env} in Provider.baseEndpoint
+//           with Environment.slug
+//        c. Inserts one row into this table
+//   8. User repeats for more providers or services
+//
+// EXAMPLE ROWS for Production environment of AcmeCorp:
+//
+//   Row 1: env=prod, service=Email, provider=SendGrid
+//     credentials = AES256_ENCRYPT({ "api_key": "SG.xxx", "from_email": "no-reply@acme.com" })
+//     endpoint    = "/api/prod/email/sendgrid"
+//
+//   Row 2: env=prod, service=Email, provider=Mailgun (backup)
+//     credentials = AES256_ENCRYPT({ "api_key": "mg.xxx", "domain": "mg.acme.com" })
+//     endpoint    = "/api/prod/email/mailgun"
+//
+//   Row 3: env=prod, service=SMS, provider=Twilio
+//     credentials = AES256_ENCRYPT({ "account_sid": "AC.xxx", "auth_token": "xxx" })
+//     endpoint    = "/api/prod/sms/twilio"
+//
+// RUNTIME USAGE:
+//   Client sends: POST /api/prod/email/sendgrid  with API key header
+//   Platform:
+//     1. Verifies API key against Environment.apiKeyHash
+//     2. Looks up this table by environmentId + endpoint
+//     3. Decrypts credentials
+//     4. Calls the provider (SendGrid) with decrypted credentials
+//     5. Returns response to client
+//     6. Logs the result in request_logs
+//
+// SECURITY RULE:
+//   ALWAYS encrypt credentials with AES-256 BEFORE inserting.
+//   NEVER store plain text API keys or secrets in the credentials field.
+//
+// UNIQUE CONSTRAINT:
+//   One environment cannot have the same provider twice for the same service.
+//   e.g. Cannot add SendGrid twice under Email in the same environment.
+// =============================================================================
+
+model EnvironmentServiceProvider {
+  id String @id @default(cuid())
+
+  /// The environment this config belongs to (FK → environments)
+  environmentId String
+  environment   Environment @relation(fields: [environmentId], references: [id])
+
+  /// Which service this config is for (FK → service_types)
+  /// e.g. st-001 = Email | st-002 = SMS
+  serviceTypeId String
+  serviceType   ServiceType @relation(fields: [serviceTypeId], references: [id])
+
+  /// Which provider is configured (FK → providers)
+  /// e.g. pr-001 = SendGrid | pr-003 = Twilio
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
+
+  /// AES-256 encrypted provider credentials
+  /// Shape is defined by Provider.requiredCredentialSchema
+  /// Example (BEFORE encryption): { "api_key": "SG.xxx", "from_email": "no-reply@acme.com" }
+  /// NEVER store plain text — always encrypt at application layer before saving
+  credentials Json
+
+  /// Auto-generated endpoint for this provider in this environment
+  /// Generated by: Provider.baseEndpoint with {env} replaced by Environment.slug
+  /// Example: "/api/prod/email/sendgrid"
+  /// The client uses this exact URL to send requests to the platform
+  endpoint String
+
+  /// Set false to temporarily disable this provider (e.g. maintenance, quota exceeded)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ─── Relations ────────────────────────────────────────────────────────────
+  /// All API request logs that went through this specific provider config
+  requestLogs RequestLog[]
+
+  /// One environment cannot have the same provider twice for the same service
+  @@unique([environmentId, serviceTypeId, providerId])
+  @@map("environment_service_providers")
+}
+
+// =============================================================================
+// TABLE 7 — request_logs
+//
+// Every API call made through the platform is logged here.
+// Used for: audit trails, debugging, usage analytics, queue recovery.
+//
+// RUNTIME FLOW (how a log row is created):
+//   1. Client sends request with API key + endpoint
+//   2. Platform verifies API key → finds the environment
+//   3. Platform finds the matching EnvironmentServiceProvider row
+//   4. Platform inserts a log row with status = PENDING
+//   5. Request is pushed to the queue
+//   6. Queue worker picks it up → calls the provider
+//   7. Log is updated to SUCCESS or FAILED
+//
+// QUEUE CRASH RECOVERY:
+//   If the queue crashes, PENDING rows act as a safety net.
+//   A cron job runs periodically and scans for stuck rows:
+//     WHERE status = PENDING AND createdAt < NOW() - INTERVAL '5 minutes'
+//   For each stuck row:
+//     → requeue the request
+//     → increment retryCount
+//     → update lastRetriedAt = NOW()
+//
+// DENORMALIZED FIELDS (serviceType, providerSlug):
+//   These are copied from the related records at insert time.
+//   Reason: avoids expensive JOINs on high-traffic log queries.
+//   Also preserves historical accuracy — if a service/provider is renamed
+//   later, old logs still show the correct name at the time of the request.
+// =============================================================================
+
+model RequestLog {
+  id String @id @default(cuid())
+
+  /// Which environment this request came from (FK → environments)
+  environmentId String
+  environment   Environment @relation(fields: [environmentId], references: [id])
+
+  /// The exact provider config that handled this request (FK → environment_service_providers)
+  /// Used to look up which service + provider processed this request
+  environmentServiceProviderId String
+  environmentServiceProvider   EnvironmentServiceProvider @relation(fields: [environmentServiceProviderId], references: [id])
+
+  /// Denormalized service slug — copied at insert time
+  /// e.g. "email", "sms"
+  /// Stored to avoid JOINs on high-traffic log queries
+  serviceType String
+
+  /// Denormalized provider slug — copied at insert time
+  /// e.g. "sendgrid", "twilio", "msg91"
+  /// Stored to avoid JOINs on high-traffic log queries
+  providerSlug String
+
+  /// Current status of this request
+  /// PENDING → in queue | SUCCESS → completed | FAILED → error occurred
+  status RequestStatus @default(PENDING)
+
+  /// The sanitized request payload sent to the provider
+  /// Strip all secrets/credentials before storing here
+  requestData Json?
+
+  /// The raw response received from the provider
+  responseData Json?
+
+  /// Error message if status = FAILED
+  /// Populated by the queue worker when the provider call fails
+  error String?
+
+  /// Number of retry attempts made by the recovery job (starts at 0)
+  /// Incremented each time the cron job requeues this request
+  retryCount Int @default(0)
+
+  /// Timestamp of the most recent retry by the recovery job
+  /// Null if this request has never been retried
+  lastRetriedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@map("request_logs")
 }

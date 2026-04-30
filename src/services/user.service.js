@@ -8,6 +8,11 @@ export const createUser = async (data) => {
 
 export const getAllUsers = async () => {
   const users = await prisma.user.findMany({
+    where: {
+      NOT: {
+        role: "SUPER_ADMIN",
+      },
+    },
     select: {
       id: true,
       user_name: true,
@@ -15,6 +20,9 @@ export const getAllUsers = async () => {
       role: true,
       is_active: true,
       created_at: true,
+    },
+    orderBy: {
+      created_at: "asc",
     },
   });
 
@@ -24,7 +32,7 @@ export const getAllUsers = async () => {
     name: user.user_name,
     email: user.email,
     role: user.role,
-    joined: user.created_at,
+    joined: new Date(user.created_at).toDateString(),
     active: user.is_active,
   }));
 };
@@ -45,10 +53,7 @@ export const getStatsData = async () => {
   const [adminCount, activeProjects] = await Promise.all([
     prisma.user.count({
       where: {
-        OR: [
-      { role: "ADMIN" },
-      { role: "SUPER_ADMIN" }
-    ],
+         role: "ADMIN",
         is_deleted: false,
       },
     }),
