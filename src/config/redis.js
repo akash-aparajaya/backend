@@ -5,4 +5,9 @@ export const redisConnection = new IORedis({
   port: process.env.REDIS_PORT,
 
   maxRetriesPerRequest: null, // required for BullMQ
+
+  retryStrategy: (times) => {
+    console.log("Retrying Redis...", times);
+    return Math.min(times * 100, 2000);
+  },
 });

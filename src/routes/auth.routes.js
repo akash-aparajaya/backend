@@ -1,9 +1,10 @@
 import express from "express";
 import {
   login,
-  createSuperAdmin,
   refreshAccessToken,
-  logout,forgotPassword, resetPassword
+  logout,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 
 import { createAdmin } from "../controllers/admin.controller.js";
@@ -12,18 +13,17 @@ import { allowRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
-/* -------- ROUTES -------- */
-router.post("/create-super-admin", createSuperAdmin);
-
 /* -------- LOGIN -------- */
-router.post("/login", login);       
+router.post("/login", login);
 
 /* -------- REFRESH TOKEN -------- */
 router.post("/refresh-token", refreshAccessToken);
 
+/* -------- FORGOT PASSWORD -------- */
 router.post("/forgotPassword", forgotPassword);
 
-router.post("/resetPassword",resetPassword );
+/* -------- RESET PASSWORD -------- */
+router.post("/resetPassword", resetPassword);
 
 /* -------- logout -------- */
 router.get("/logout", logout);
@@ -33,7 +33,7 @@ router.post(
   "/create-admin",
   verifyToken,
   allowRoles("SUPER_ADMIN"),
-  createAdmin
+  createAdmin,
 );
 
 export default router;

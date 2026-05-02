@@ -44,31 +44,6 @@ export const loginService = async ({ email, password }) => {
   };
 };
 
-export const createSuperAdminService = async ({
-  user_name,
-  email,
-  password,
-}) => {
-  if (!user_name || !email || !password) throw new Error("Missing fields");
-
-  const hashed = await bcrypt.hash(password, 12);
-
-  const checkExistingSuperAdmin = await prisma.user.findFirst({
-    where: { role: "SUPER_ADMIN", is_deleted: false },
-  });
-
-  if (checkExistingSuperAdmin) throw new Error("User already exists");
-
-  return await prisma.user.create({
-    data: {
-      user_name,
-      email,
-      password: hashed,
-      role: "SUPER_ADMIN",
-    },
-  });
-};
-
 export const refreshService = async ({ refreshToken }) => {
   if (!refreshToken) {
     throw new Error("Refresh token required");

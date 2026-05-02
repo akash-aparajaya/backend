@@ -14,14 +14,21 @@ router.use((req, res, next) => {
 
 /* -------- HEALTH -------- */
 router.get("/health", (req, res) => {
-  res.json({ status: "OK" , message: "Backend is running"});
-
+  res.json({ status: "OK", message: "Backend is running" });
 });
 
-/* -------- ROUTES -------- */
+/* ========== ROUTES ========== */
+
+/* -------- AUTH -------- */
 router.use("/auth", authRoutes);
-router.use("/project", projectRoutes);
+
+/* -------- USER -------- */
 router.use("/users", userRoutes);
+
+/* -------- PROJECT -------- */
+router.use("/project", projectRoutes);
+
+/* -------- SERVICES -------- */
 router.use("/services", services);
 
 export default router;
