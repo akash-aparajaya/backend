@@ -30,3 +30,15 @@ export const getUsers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { newPassword } = req.body;
+    await userService.changePassword(userId, newPassword);
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    res.json(result);
+    res.status(500).json({ message: error.message });
+  }
+};

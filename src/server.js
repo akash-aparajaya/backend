@@ -7,27 +7,27 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // DB
+    // ✅ Database
     await prisma.$connect();
     logger.verbose("💾 Database connected");
 
-    // Redis (strong check)
+    // ✅ Redis
     await redisConnection.ping();
     logger.verbose("⚡ Redis connected");
 
-    // Server
+    // ✅ Start server
     app.listen(PORT, () => {
-      logger.verbose(`🚀 Server running on port http://localhost:${PORT}`);
+      logger.verbose(`🚀 Server running on http://localhost:${PORT}`);
+      logger.verbose(`⏱ Server started at ${new Date().toISOString()}`);
     });
 
   } catch (error) {
     logger.error("🔴 Failed to start server:", error);
-    console.error(error)
     process.exit(1);
   }
 };
 
-// Graceful shutdown
+// ✅ Graceful shutdown
 const shutdown = async () => {
   logger.warn("🛑 Shutting down server...");
   try {

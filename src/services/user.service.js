@@ -78,3 +78,11 @@ export const getStatsData = async () => {
     totalActiveProjects: activeProjects,
   };
 };
+
+export const changePassword = async (userId, newPassword) => {
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+  });
+};

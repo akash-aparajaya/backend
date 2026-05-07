@@ -9,6 +9,7 @@ router.get("/", (req, res) => {
 router.post("/create-user", userController.createUser);
 router.get("/get-users",verifyToken, userController.getUserData);
 router.get("/getUsers",verifyToken, userController.getUsers);
+router.patch("/:id/password", verifyToken, userController.changePassword);
 
 
 export default router; 

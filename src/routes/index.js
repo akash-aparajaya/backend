@@ -4,6 +4,7 @@ import projectRoutes from "./project.routes.js";
 import userRoutes from "./user.routes.js";
 import services from "./services.routes.js";
 import logger from "../utils/logger.js";
+import { redisConnection } from "../config/redis.js";
 const router = express.Router();
 
 //* -------- LOGGING -------- *
@@ -13,8 +14,47 @@ router.use((req, res, next) => {
 });
 
 /* -------- HEALTH -------- */
-router.get("/health", (req, res) => {
-  res.json({ status: "OK", message: "Backend is running" });
+// ✅ Helper: format uptime
+function formatUptime(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  const decimalHours = hours + minutes / 60;
+
+  return `${decimalHours.toFixed(1)}h`;
+}
+
+router.get("/health", async (req, res) => {
+  let redisStatus = "disconnected";
+  let dbStatus = "disconnected";
+
+  try {
+    const pong = await redisConnection.ping();
+    if (pong === "PONG") redisStatus = "connected";
+  } catch {
+    redisStatus = "error";
+  }
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = "connected";
+  } catch {
+    dbStatus = "error";
+  }
+
+  const uptime = Math.floor(process.uptime());
+
+  res.status(200).json({
+    success: true,
+    uptime, // number (seconds)
+    uptimeFormatted: formatUptime(uptime), // ✅ NO seconds
+    services: {
+      api: "running",
+      database: dbStatus,
+      redis: redisStatus,
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 /* ========== ROUTES ========== */
