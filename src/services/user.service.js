@@ -8,21 +8,16 @@ export const createUser = async (data) => {
 
 export const getAllUsers = async () => {
   const users = await prisma.user.findMany({
-    where: {
-      NOT: {
-        role: "SUPER_ADMIN",
-      },
-    },
+    
     select: {
       id: true,
       user_name: true,
       email: true,
       role: true,
       is_active: true,
-      created_at: true,
     },
     orderBy: {
-      created_at: "asc",
+      created_at: "desc",
     },
   });
 
@@ -32,7 +27,6 @@ export const getAllUsers = async () => {
     name: user.user_name,
     email: user.email,
     role: user.role,
-    joined: new Date(user.created_at).toDateString(),
     active: user.is_active,
   }));
 };

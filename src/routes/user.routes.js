@@ -7,6 +7,8 @@ router.get("/", (req, res) => {
   res.send("User route working");
 });
 router.post("/create-user", userController.createUser);
+router.get("/getAllUsers",verifyToken, userController.getAllUsers);
+
 router.get("/get-users",verifyToken, userController.getUserData);
 router.get("/getUsers",verifyToken, userController.getUsers);
 router.patch("/:id/password", verifyToken, userController.changePassword);
