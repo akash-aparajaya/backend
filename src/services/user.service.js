@@ -1,6 +1,12 @@
 import prisma from "../config/prisma.js";
+import bcrypt from "bcrypt";
 
 export const createUser = async (data) => {
+  // data.user_name = data.name;
+  data.password = await bcrypt.hash(data.password, 12);
+  // delete data.name; // Remove the 'name' field as it's not in the database schema
+  // data.is_active = data.active
+  // delete data.active; // Remove the 'active' field as it's not in the database schema
   return await prisma.user.create({
     data,
   });
@@ -8,7 +14,6 @@ export const createUser = async (data) => {
 
 export const getAllUsers = async () => {
   const users = await prisma.user.findMany({
-    
     select: {
       id: true,
       user_name: true,
@@ -30,16 +35,26 @@ export const getAllUsers = async () => {
     active: user.is_active,
   }));
 };
+
+
+export const changeUserStatus = async (userId, isActive) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { is_active: isActive },
+  });
+};
+
+
 export const getUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { id },
-    select: {
-      id: true,
-      user_name: true,
-      email: true,
-      role: true,
-      is_deleted: true,
-    },
+    // select: {
+    //   id: true,
+    //   user_name: true,
+    //   email: true,
+    //   role: true,
+    //   is_deleted: true,
+    // },
   });
 };
 
@@ -47,7 +62,7 @@ export const getStatsData = async () => {
   const [adminCount, activeProjects] = await Promise.all([
     prisma.user.count({
       where: {
-         role: "ADMIN",
+        role: "ADMIN",
         is_deleted: false,
       },
     }),

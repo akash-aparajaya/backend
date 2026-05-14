@@ -28,6 +28,7 @@ datasource db {
 enum UserRole {
   ADMIN
   SUPER_ADMIN
+  USER
 }
 
 /// Status of each API request logged in request_logs

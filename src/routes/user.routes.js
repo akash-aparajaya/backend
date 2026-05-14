@@ -8,6 +8,8 @@ router.get("/", (req, res) => {
 });
 router.post("/create-user", userController.createUser);
 router.get("/getAllUsers",verifyToken, userController.getAllUsers);
+router.patch("/changeUserStatus/:id", verifyToken, userController.changeUserStatus);
+router.get("/get-user/:id",verifyToken, userController.getUserData);
 
 router.get("/get-users",verifyToken, userController.getUserData);
 router.get("/getUsers",verifyToken, userController.getUsers);
