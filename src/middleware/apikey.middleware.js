@@ -3,56 +3,49 @@ import prisma from "../config/prisma.js";
 
 export const validateApiKey = async (req, res, next) => {
   try {
-    const apiKey = req.headers["x-api-key"];
+    const rawKey = req.headers["x-api-key"];
 
-    // 1. Check if key exists
-    if (!apiKey) {
-      return res.status(401).json({
-        success: false,
-        message: "API key missing in headers (x-api-key)",
-      });
+    if (!rawKey) {
+      return res.status(401).json({ error: "API key missing" });
     }
 
-    // 2. Hash incoming key (NEVER store raw key)
+    // hash incoming key
     const hashedKey = crypto
       .createHash("sha256")
-      .update(apiKey)
+      .update(rawKey)
       .digest("hex");
 
-    // 3. Find key in DB
-    const keyRecord = await prisma.apiKey.findUnique({
-      where: { keyHash: hashedKey },
-      include: {
-        project: true,
+    // find in DB
+    const apiKey = await prisma.apiKeys.findFirst({
+      where: {
+        api_key: hashedKey,
+        is_active: true,
+        is_deleted: false,
       },
     });
 
-    // 4. Validate key
-    if (!keyRecord) {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid API key",
-      });
+    if (!apiKey) {
+      return res.status(403).json({ error: "Invalid API key" });
     }
 
-    // 5. Check if project is active
-    if (!keyRecord.project.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Project is disabled",
-      });
+    // check expiry
+    if (apiKey.expires_at && new Date() > apiKey.expires_at) {
+      return res.status(403).json({ error: "API key expired" });
     }
 
-    // 6. Attach project to request
-    req.project = keyRecord.project;
-    req.apiKeyId = keyRecord.id;
+    // update last used
+    await prisma.apiKeys.update({
+      where: { id: apiKey.id },
+      data: { last_used_at: new Date() },
+    });
+
+    // attach to request
+    req.apiKey = apiKey;
+    req.environment_id = apiKey.environment_id;
+    req.mode = apiKey.mode;
 
     next();
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "API Key validation error",
-      error: error.message,
-    });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

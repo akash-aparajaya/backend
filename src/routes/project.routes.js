@@ -3,6 +3,8 @@ import {
   createProject,
   getProjects,
   getProjectId,
+  updateProjectStatus,
+  createEnvironment,
 } from "../controllers/project.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
@@ -56,5 +58,7 @@ router.delete(
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
 );
+
+router.post("/create-environment/:projectId",  createEnvironment);
 
 export default router;

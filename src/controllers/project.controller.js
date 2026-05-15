@@ -2,7 +2,8 @@ import {
   createProjectService,
   getAllProjects,
   updateProjectStatusService,
-  getProjectById
+  getProjectById,
+  createEnvironmentService,
 } from "../services/project.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -38,14 +39,14 @@ export const getProjects = async (req, res) => {
 export const getProjectId = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id)
+    console.log(id);
     const project = await getProjectById(id);
-    console.log(project)
+    console.log(project);
     return successResponse(res, project, "Project fetched successfully");
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }
-}
+};
 
 export const updateProjectStatus = async (req, res) => {
   try {
@@ -53,6 +54,25 @@ export const updateProjectStatus = async (req, res) => {
     const { isActive } = req.query;
     const result = await updateProjectStatusService(id, isActive);
     return successResponse(res, result, "Project status updated successfully");
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+export const createEnvironment = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { environment_name } = req.body;
+    const result = await createEnvironmentService({
+      projectId,
+      environment_name,
+    });
+    return successResponse(
+      res,
+      result,
+      "Environment created successfully",
+      201,
+    );
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }

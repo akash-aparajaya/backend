@@ -8,7 +8,7 @@ export const createProjectService = async ({
   project_description,
   userId,
   isActive,
-  image_url, 
+  image_url,
 }) => {
   if (!project_name) {
     throw new Error("Project name is required");
@@ -49,19 +49,20 @@ export const getAllProjects = async () => {
       id: true,
       project_name: true,
       project_description: true,
-      createdAt: true, 
+      createdAt: true,
       isActive: true,
     },
   });
 };
 export const getProjectById = async (id) => {
   const project = await prisma.project.findFirst({
-    where: { id },select: {
+    where: { id },
+    select: {
       id: true,
       project_name: true,
-      createdAt: true, 
+      createdAt: true,
       isActive: true,
-    }
+    },
   });
   return {
     id: project?.id,
@@ -76,4 +77,22 @@ export const updateProjectStatusService = async (id, isActive) => {
     where: { id },
     data: { isActive },
   });
+};
+
+export const createEnvironmentService = async ({
+  projectId,
+  environment_name,
+}) => {
+  if (!environment_name) {
+    throw new Error("Environment name is required");
+  }
+
+  const environment = await prisma.environment.create({
+    data: {
+      environment_name,
+      projectId,
+    },
+  });
+
+  return environment;
 };

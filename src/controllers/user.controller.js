@@ -1,9 +1,31 @@
 import * as userService from "../services/user.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
+/* -------- DASHBOARD -------- */
+export const dashboard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const users = await userService.getUserById(userId);
+    const statsData = await userService.getStatsData();
+    return successResponse(
+      res,
+      { users, statsData },
+      "User data retrieved successfully",
+    );
+  } catch (error) {
+    return errorResponse(res, "Failed to retrieve user data", error.message);
+  }
+};
 export const createUser = async (req, res) => {
   try {
-    const user = await userService.createUser(req.body);
+    const { user_name, email, password, role, is_active } = req.body;
+    const user = await userService.createUser(
+      user_name,
+      email,
+      password,
+      role,
+      is_active,
+    );
     return successResponse(res, user, "User created successfully");
   } catch (error) {
     return errorResponse(res, "Failed to create user", error.message);
@@ -19,17 +41,6 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-export const changeUserStatus = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const { active } = req.body;
-    const result = await userService.changeUserStatus(userId, active);
-    return successResponse(res, result, "User status updated successfully");
-  } catch (error) {
-    return errorResponse(res, "Failed to update user status", error.message);
-  }
-};
-
 export const getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -40,37 +51,46 @@ export const getUserById = async (req, res) => {
   }
 };
 
-export const getUserData = async (req, res) => {
+export const updateUser = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const users = await userService.getUserById(userId);
-    const statsData = await userService.getStatsData();
-    return successResponse(
-      res,
-      { users, statsData },
-      "User data retrieved successfully",
-    );
+    const userId = req.params.id;
+
+    const updatedData = req.body;
+
+    const user = await userService.updateUser(userId, updatedData);
+
+    return successResponse(res, user, "User updated successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve user data", error.message);
+    return errorResponse(res, "Failed to update user", error.message);
   }
 };
 
-export const getUsers = async (req, res) => {
+export const deleteUser = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const users = await userService.getAllUsers(userId);
-    console.log(users);
-    return successResponse(res, users, "Users retrieved successfully");
+    const userId = req.params.id;
+    await userService.deleteUser(userId);
+    return successResponse(res, null, "User deleted successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve users", error.message);
+    return errorResponse(res, "Failed to delete user", error.message);
+  }
+};
+
+export const changeUserStatus = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { is_active } = req.body;
+    const result = await userService.changeUserStatus(userId, is_active);
+    return successResponse(res, result, "User status updated successfully");
+  } catch (error) {
+    return errorResponse(res, "Failed to update user status", error.message);
   }
 };
 
 export const changePassword = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { newPassword } = req.body;
-    await userService.changePassword(userId, newPassword);
+    const userId = req.params.id;
+    const { password } = req.body;
+    await userService.changePassword(userId, password);
     return successResponse(res, null, "Password changed successfully");
   } catch (error) {
     return errorResponse(res, "Failed to change password", error.message);

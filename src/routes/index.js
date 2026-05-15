@@ -3,6 +3,7 @@ import authRoutes from "./auth.routes.js";
 import projectRoutes from "./project.routes.js";
 import userRoutes from "./user.routes.js";
 import services from "./services.routes.js";
+import gitTokenRoutes from "./gitToken.routes.js";
 import logger from "../utils/logger.js";
 import { redisConnection } from "../config/redis.js";
 const router = express.Router();
@@ -70,5 +71,7 @@ router.use("/project", projectRoutes);
 
 /* -------- SERVICES -------- */
 router.use("/services", services);
+
+router.use("/token", gitTokenRoutes);
 
 export default router;

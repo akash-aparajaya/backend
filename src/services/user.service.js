@@ -1,60 +1,74 @@
 import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
 
-export const createUser = async (data) => {
-  // data.user_name = data.name;
-  data.password = await bcrypt.hash(data.password, 12);
-  // delete data.name; // Remove the 'name' field as it's not in the database schema
-  // data.is_active = data.active
-  // delete data.active; // Remove the 'active' field as it's not in the database schema
+export const createUser = async (
+  user_name,
+  email,
+  password,
+  role,
+  is_active,
+) => {
+  const hashedPassword = await bcrypt.hash(password, 12);
   return await prisma.user.create({
-    data,
+    data: {
+      user_name,
+      email,
+      password: hashedPassword,
+      role,
+      is_active,
+    },
   });
 };
 
 export const getAllUsers = async () => {
-  const users = await prisma.user.findMany({
+  const users = await prisma.user.findMany(
+    {
+      where: { is_deleted: false },
+    },
+    {
+      select: {
+        id: true,
+        user_name: true,
+        email: true,
+        role: true,
+        is_active: true,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    },
+  );
+
+  // Use .map() to format every user in the list
+  return users.map((user) => ({
+    id: user.id,
+    user_name: user.user_name,
+    email: user.email,
+    role: user.role,
+    is_active: user.is_active,
+  }));
+};
+
+export const changeUserStatus = async (userId, is_active) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { is_active },
+  });
+};
+
+export const getUserById = async (id) => {
+  return await prisma.user.findUnique({
+    where: { id },
     select: {
       id: true,
       user_name: true,
       email: true,
       role: true,
       is_active: true,
+      lastLoginAt: true,
+      created_at: true,
+      is_deleted: true,
     },
-    orderBy: {
-      created_at: "desc",
-    },
-  });
-
-  // Use .map() to format every user in the list
-  return users.map((user) => ({
-    id: user.id,
-    name: user.user_name,
-    email: user.email,
-    role: user.role,
-    active: user.is_active,
-  }));
-};
-
-
-export const changeUserStatus = async (userId, isActive) => {
-  return await prisma.user.update({
-    where: { id: userId },
-    data: { is_active: isActive },
-  });
-};
-
-
-export const getUserById = async (id) => {
-  return await prisma.user.findUnique({
-    where: { id },
-    // select: {
-    //   id: true,
-    //   user_name: true,
-    //   email: true,
-    //   role: true,
-    //   is_deleted: true,
-    // },
   });
 };
 
@@ -88,10 +102,23 @@ export const getStatsData = async () => {
   };
 };
 
-export const changePassword = async (userId, newPassword) => {
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
+export const changePassword = async (userId, password) => {
+  const hashedPassword = await bcrypt.hash(password, 12);
   return await prisma.user.update({
     where: { id: userId },
     data: { password: hashedPassword },
   });
 };
+
+export const updateUser = async (userId, updatedData) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: updatedData,
+  });
+};
+
+export const deleteUser = async (userId) =>
+  await prisma.user.update({
+    where: { id: userId },
+    data: { is_deleted: true },
+  });

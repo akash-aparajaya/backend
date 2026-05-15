@@ -1,19 +1,72 @@
 import express from "express";
 import * as userController from "../controllers/user.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { allowRoles } from "../middleware/role.middleware.js";
 const router = express.Router();
 
 router.get("/", (req, res) => {
   res.send("User route working");
 });
-router.post("/create-user", userController.createUser);
-router.get("/getAllUsers",verifyToken, userController.getAllUsers);
-router.patch("/changeUserStatus/:id", verifyToken, userController.changeUserStatus);
-router.get("/get-user/:id",verifyToken, userController.getUserData);
 
-router.get("/get-users",verifyToken, userController.getUserData);
-router.get("/getUsers",verifyToken, userController.getUsers);
-router.patch("/:id/password", verifyToken, userController.changePassword);
+/* -------- DASHBOARD -------- */
+router.get(
+  "/get-users",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.dashboard,
+);
 
+/* -------- CREATE USER -------- */
+router.post(
+  "/create-user",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.createUser,
+);
 
-export default router; 
+/* -------- GET USERS -------- */
+router.get(
+  "/get-all-users",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.getAllUsers,
+);
+router.get(
+  "/get-user-id/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.getUserById,
+);
+
+/* -------- UPDATE USER -------- */
+router.patch(
+  "/update-user/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.updateUser,
+);
+
+/* -------- DELETE USER -------- */
+router.delete(
+  "/delete-user/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.deleteUser,
+);
+
+/* -------- UPDATE USER STATUS -------- */
+router.patch(
+  "/change-user-status/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.changeUserStatus,
+);
+
+/* -------- CHANGE PASSWORD -------- */
+router.patch(
+  "/change-password/:id",
+  verifyToken,
+  userController.changePassword,
+);
+
+export default router;

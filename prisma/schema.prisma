@@ -41,6 +41,14 @@ enum RequestStatus {
   FAILED
 }
 
+// API key mode
+/// SANDBOX → used for testing providers in non-production
+/// LIVE     → used for real-time production requests
+enum ApiKeyMode {
+  SANDBOX
+  LIVE
+}
+
 // =============================================================================
 // TABLE 1 — service_types
 //
@@ -208,8 +216,8 @@ model User {
   /// Timestamp of the most recent successful login
   lastLoginAt DateTime?
 
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   /// Populated when is_deleted is set to true — for audit purposes
   deleted_at DateTime?
@@ -264,7 +272,7 @@ model Project {
   /// All environments under this project
   /// e.g. Development, UAT, Production
   environments Environment[]
-
+ apiKeys ApiKeys[]
   @@map("projects")
 }
 
@@ -302,21 +310,7 @@ model Environment {
 
   /// Display name — user types this freely
   /// e.g. "Production", "Development", "QA", "Demo"
-  name String
-
-  /// URL-safe slug — used in auto-generated endpoint paths
-  /// e.g. "prod", "dev", "uat"
-  /// Must be unique within the same project
-  slug String
-
-  /// Bcrypt hash of the auto-generated API key
-  /// The actual key is NEVER stored — only this hash
-  /// Use bcrypt.compare(incomingKey, apiKeyHash) at runtime
-  apiKeyHash String @unique
-
-  /// Last 4 characters of the API key — shown in the UI for identification
-  /// e.g. if key is "sk-live-xxxxxxxxxxa3Kx" → lastFour = "a3Kx"
-  apiKeyLastFour String
+  environment_name String
 
   /// Set false to disable this environment (blocks all incoming requests)
   isActive Boolean @default(true)
@@ -333,7 +327,8 @@ model Environment {
 
   /// Slug must be unique within the same project
   /// Cannot have two "prod" environments under the same project
-  @@unique([projectId, slug])
+   apiKeys ApiKeys[]
+  @@unique([projectId])
   @@map("environments")
 }
 
@@ -514,4 +509,27 @@ model RequestLog {
   createdAt DateTime @default(now())
 
   @@map("request_logs")
+}
+
+/// API keys table
+/// Stores generated API keys for each environment
+model ApiKeys {
+  id              String     @id @default(cuid())
+  project_id      String
+   project Project @relation(fields: [project_id], references: [id])
+  environment_id  String
+    environment Environment @relation(fields: [environment_id], references: [id])
+
+  note            String?
+  api_key         String     @unique // stores sha256 hash
+  prefix          String // stores prefix for display
+  mode            ApiKeyMode
+  expires_in_days Int?
+  expires_at      DateTime? // calculated from created_at + expires_in_days
+  last_used_at    DateTime? // track when key was last used
+  is_active       Boolean    @default(true)
+  is_deleted      Boolean    @default(false)
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  @@map("api_keys")
 }
