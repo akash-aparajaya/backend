@@ -4,7 +4,7 @@ export default async function seedUser(prisma) {
   const saltRounds = 12
 
   // hash passwords
-  const adminPassword = await bcrypt.hash("admin123", saltRounds)
+  const adminPassword = await bcrypt.hash("123456789", saltRounds)
 
   await prisma.user.createMany({
     data: [

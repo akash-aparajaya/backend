@@ -28,6 +28,7 @@ export const getAllUsers = async () => {
     {
       select: {
         id: true,
+        public_id:true,
         user_name: true,
         email: true,
         role: true,
@@ -41,7 +42,7 @@ export const getAllUsers = async () => {
 
   // Use .map() to format every user in the list
   return users.map((user) => ({
-    id: user.id,
+    id: user.public_id,
     user_name: user.user_name,
     email: user.email,
     role: user.role,
@@ -51,7 +52,7 @@ export const getAllUsers = async () => {
 
 export const changeUserStatus = async (userId, is_active) => {
   return await prisma.user.update({
-    where: { id: userId },
+    where: { public_id: userId },
     data: { is_active },
   });
 };
@@ -119,6 +120,6 @@ export const updateUser = async (userId, updatedData) => {
 
 export const deleteUser = async (userId) =>
   await prisma.user.update({
-    where: { id: userId },
+    where: { public_id: userId },
     data: { is_deleted: true },
   });
