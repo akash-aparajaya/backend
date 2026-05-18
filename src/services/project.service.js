@@ -30,8 +30,8 @@ export const createProjectService = async ({
       project_name,
       project_description,
       image_url: finalImageUrl,
-      isActive,
-      userId,
+      is_active: isActive,
+      user_id: userId,
     },
   });
 
@@ -40,43 +40,89 @@ export const createProjectService = async ({
       id: project.id,
       name: project.project_name,
       image_url: finalImageUrl,
+      is_active: project.is_active,
     },
   };
 };
+
 export const getAllProjects = async () => {
-  return await prisma.project.findMany({
+  const projectData = await prisma.project.findMany({
     select: {
       id: true,
+      public_id: true,
       project_name: true,
-      project_description: true,
-      createdAt: true,
-      isActive: true,
+      is_active: true,
+      created_at: true,
+
+      user: {
+        select: {
+          public_id: true,
+          user_name: true,
+        },
+      },
+    },
+
+    orderBy: {
+      created_at: "desc",
     },
   });
-};
-export const getProjectById = async (id) => {
-  const project = await prisma.project.findFirst({
-    where: { id },
-    select: {
-      id: true,
-      project_name: true,
-      createdAt: true,
-      isActive: true,
-    },
-  });
-  return {
-    id: project?.id,
+  return projectData.map((project) => ({
+    public_id: project?.public_id,
     project_name: project?.project_name,
-    isActive: project?.isActive,
-    createdAt: new Date(project?.createdAt).toDateString(),
-  };
+    is_active: project?.is_active,
+    created_at: new Date(project?.created_at).toDateString(),
+    user: project?.user?.user_name,
+    user_public_id: project?.user?.public_id,
+  }));
 };
 
 export const updateProjectStatusService = async (id, isActive) => {
   return await prisma.project.update({
-    where: { id },
-    data: { isActive },
+    where: { public_id: id },
+    data: { is_active: isActive },
   });
+};
+
+export const getProjectById = async (id) => {
+  const project = await prisma.project.findFirst({
+    where: {
+      public_id: id,
+    },
+
+    select: {
+      public_id: true,
+      project_name: true,
+      project_description: true,
+      image_url: true,
+      is_active: true,
+      created_at: true,
+
+      environments: {
+        select: {
+          public_id: true,
+          environment_name: true,
+          is_active: true,
+          created_at: true,
+        },
+
+        
+      },
+    },
+  });
+
+  return {
+    public_id: project?.public_id,
+    project_name: project?.project_name,
+    project_description: project?.project_description,
+    image_url: project?.image_url,
+    is_active: project?.is_active,
+
+    created_at: project?.created_at
+      ? new Date(project.created_at).toDateString()
+      : null,
+
+    environments: project?.environments,
+  };
 };
 
 export const createEnvironmentService = async ({

@@ -21,24 +21,23 @@ export const createUser = async (
 };
 
 export const getAllUsers = async () => {
-  const users = await prisma.user.findMany(
-    {
-      where: { is_deleted: false },
+  const users = await prisma.user.findMany({
+    where: {
+      is_deleted: false,
     },
-    {
-      select: {
-        id: true,
-        public_id:true,
-        user_name: true,
-        email: true,
-        role: true,
-        is_active: true,
-      },
-      orderBy: {
-        created_at: "desc",
-      },
+    select: {
+      id: true,
+      public_id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      is_active: true,
     },
-  );
+
+    orderBy: {
+      created_at: "desc",
+    },
+  });
 
   // Use .map() to format every user in the list
   return users.map((user) => ({
@@ -54,19 +53,23 @@ export const changeUserStatus = async (userId, is_active) => {
   return await prisma.user.update({
     where: { public_id: userId },
     data: { is_active },
+    select: {
+      public_id: true,
+      is_active: true,
+    },
   });
 };
 
 export const getUserById = async (id) => {
   return await prisma.user.findUnique({
-    where: { id },
+    where: { public_id: id },
     select: {
       id: true,
       user_name: true,
       email: true,
       role: true,
       is_active: true,
-      lastLoginAt: true,
+      last_login_at: true,
       created_at: true,
       is_deleted: true,
     },
@@ -85,13 +88,13 @@ export const getStatsData = async () => {
     // prisma.service.groupBy({
     //   by: ["name"],
     //   where: {
-    //     isActive: true,
+    //     is_active: true,
     //   },
     // }),
 
     prisma.project.count({
       where: {
-        isActive: true,
+        is_active: true,
       },
     }),
   ]);
@@ -106,14 +109,14 @@ export const getStatsData = async () => {
 export const changePassword = async (userId, password) => {
   const hashedPassword = await bcrypt.hash(password, 12);
   return await prisma.user.update({
-    where: { id: userId },
+    where: { public_id: userId },
     data: { password: hashedPassword },
   });
 };
 
 export const updateUser = async (userId, updatedData) => {
   return await prisma.user.update({
-    where: { id: userId },
+    where: { public_id: userId },
     data: updatedData,
   });
 };

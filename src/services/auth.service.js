@@ -31,9 +31,9 @@ export const loginService = async ({ email, password }) => {
   const hash = await bcrypt.hash(refreshToken, 12);
 
   await prisma.user.update({
-    where: { id: user.id },
+    where: { public_id: user.public_id },
     data: {
-      lastLoginAt: new Date(),
+        last_login_at: new Date(),
       refresh_token_hash: hash,
     },
   });
@@ -58,7 +58,7 @@ export const refreshService = async ({ refreshToken }) => {
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: payload.id },
+    where: { public_id: payload.id },
   });
 
   if (!user || !user.refresh_token_hash) {
@@ -71,7 +71,7 @@ export const refreshService = async ({ refreshToken }) => {
   // 🚨 Token reuse detection
   if (!isMatch) {
     await prisma.user.update({
-      where: { id: user.id },
+      where: { public_id: user.public_id },
       data: { refresh_token_hash: null },
     });
 
@@ -86,7 +86,7 @@ export const refreshService = async ({ refreshToken }) => {
   const newHash = await bcrypt.hash(newRefreshToken, 12);
 
   await prisma.user.update({
-    where: { id: user.id },
+    where: { public_id: user.public_id },
     data: {
       refresh_token_hash: newHash,
     },
@@ -100,7 +100,7 @@ export const refreshService = async ({ refreshToken }) => {
 
 export const logoutService = async (userId) => {
   await prisma.user.update({
-    where: { id: userId },
+    where: { public_id: userId },
     data: {
       refresh_token_hash: null,
     },
@@ -177,7 +177,7 @@ export const resetPasswordService = async (token, newPassword) => {
 
   let password = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({
-    where: { id: user.id },
+    where: { public_id: user.public_id },
     data: {
       password: password,
       resetToken: null,

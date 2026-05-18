@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 export const generateAccessToken =async (user) => {
   return jwt.sign(
-    { id: user.id, role: user.role,name:user.user_name, jti: crypto.randomUUID() },
+    { id: user.public_id, role: user.role,name:user.user_name, jti: crypto.randomUUID() },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
@@ -11,7 +11,7 @@ export const generateAccessToken =async (user) => {
 
 export const generateRefreshToken = async (user) => {
   return jwt.sign(
-    { id: user.id, role: user.role, name:user.user_name,jti: crypto.randomUUID() },
+    { id: user.public_id, role: user.role, name:user.user_name,jti: crypto.randomUUID() },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
   );

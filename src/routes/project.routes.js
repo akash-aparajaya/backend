@@ -24,8 +24,8 @@ router.post(
 /* -------- GET ALL PROJECTS -------- */
 router.get(
   "/get-projects",
-  verifyToken,
-  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  // verifyToken,
+  // allowRoles(["SUPER_ADMIN", "ADMIN"]),
   getProjects,
 );
 

@@ -39,7 +39,6 @@ export const getProjects = async (req, res) => {
 export const getProjectId = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
     const project = await getProjectById(id);
     console.log(project);
     return successResponse(res, project, "Project fetched successfully");

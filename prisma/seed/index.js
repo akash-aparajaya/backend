@@ -1,16 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-// import seedEnvironment from './environment.seed.js'
 import seedUser from "./user.seed.js";
-// const seedProvider = require('./provider.seed')
+import seedProvider from "./service.provider.seed.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding started...");
 
-  //   await seedEnvironment(prisma)
-  await seedUser(prisma);
-  //   await seedProvider(prisma)
+
+  //await seedUser(prisma);
+    //  await seedProvider(prisma)
 
   console.log("🎉 All seeds completed");
 }
