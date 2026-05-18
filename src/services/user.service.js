@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
 
+/* -------- create user -------- */
 export const createUser = async (
   user_name,
   email,
@@ -20,6 +21,7 @@ export const createUser = async (
   });
 };
 
+/* -------- get all users -------- */
 export const getAllUsers = async () => {
   const users = await prisma.user.findMany({
     where: {
@@ -49,6 +51,7 @@ export const getAllUsers = async () => {
   }));
 };
 
+/* -------- change user status -------- */
 export const changeUserStatus = async (userId, is_active) => {
   return await prisma.user.update({
     where: { public_id: userId },
@@ -60,6 +63,7 @@ export const changeUserStatus = async (userId, is_active) => {
   });
 };
 
+/* -------- get user by id -------- */
 export const getUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { public_id: id },
@@ -76,6 +80,7 @@ export const getUserById = async (id) => {
   });
 };
 
+/*-------- get stats data -------- */
 export const getStatsData = async () => {
   const [adminCount, activeProjects] = await Promise.all([
     prisma.user.count({
@@ -106,6 +111,7 @@ export const getStatsData = async () => {
   };
 };
 
+/* -------- change password -------- */
 export const changePassword = async (userId, password) => {
   const hashedPassword = await bcrypt.hash(password, 12);
   return await prisma.user.update({
@@ -114,6 +120,7 @@ export const changePassword = async (userId, password) => {
   });
 };
 
+/* -------- update user -------- */
 export const updateUser = async (userId, updatedData) => {
   return await prisma.user.update({
     where: { public_id: userId },
@@ -121,6 +128,7 @@ export const updateUser = async (userId, updatedData) => {
   });
 };
 
+/* -------- delete user -------- */
 export const deleteUser = async (userId) =>
   await prisma.user.update({
     where: { public_id: userId },

@@ -5,6 +5,7 @@ import {
   getProjectId,
   updateProjectStatus,
   createEnvironment,
+  getEnvironmentsByProjectId
 } from "../controllers/project.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
@@ -34,14 +35,15 @@ router.get(
   "/get-project/:id",
   // verifyToken,
   // allowRoles(["SUPER_ADMIN", "ADMIN"]),
-  getProjectId
+  getProjectId,
 );
 
 /* -------- UPDATE PROJECT STATUS -------- */
 router.patch(
   "/update-project-status/:id",
-  verifyToken,
-  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  // verifyToken,
+  // allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  updateProjectStatus,
 );
 
 /* -------- UPDATE PROJECT -------- */
@@ -59,6 +61,11 @@ router.delete(
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
 );
 
-router.post("/create-environment/:projectId",  createEnvironment);
+/* -------- CREATE ENVIRONMENT -------- */
+router.post("/create-environment/:projectId", createEnvironment);
+
+/* -------- GET ENVIRONMENTS -------- */
+router.get("/get-environments/:projectId", getEnvironmentsByProjectId);
 
 export default router;
+ 

@@ -16,6 +16,8 @@ export const dashboard = async (req, res) => {
     return errorResponse(res, "Failed to retrieve user data", error.message);
   }
 };
+
+/* -------- create user -------- */
 export const createUser = async (req, res) => {
   try {
     const { user_name, email, password, role, is_active } = req.body;
@@ -32,6 +34,7 @@ export const createUser = async (req, res) => {
   }
 };
 
+/* -------- get all users -------- */
 export const getAllUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
@@ -41,6 +44,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+/* -------- get user by id -------- */
 export const getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -51,6 +55,7 @@ export const getUserById = async (req, res) => {
   }
 };
 
+/* -------- update user -------- */
 export const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -65,6 +70,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
+/* -------- delete user -------- */
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -75,6 +81,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+/* -------- change user status -------- */
 export const changeUserStatus = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -86,6 +93,7 @@ export const changeUserStatus = async (req, res) => {
   }
 };
 
+/* -------- change password -------- */
 export const changePassword = async (req, res) => {
   try {
     const userId = req.params.id;

@@ -3,6 +3,7 @@ import cloudinary from "../config/cloudinary.js";
 import { generateApiKey } from "../utils/apiKey.js";
 import { SERVICE_CONFIG } from "../config/service.config.js";
 
+/* -------- create project -------- */
 export const createProjectService = async ({
   project_name,
   project_description,
@@ -45,6 +46,7 @@ export const createProjectService = async ({
   };
 };
 
+/* -------- get all projects -------- */
 export const getAllProjects = async () => {
   const projectData = await prisma.project.findMany({
     select: {
@@ -76,6 +78,7 @@ export const getAllProjects = async () => {
   }));
 };
 
+/* -------- update project status -------- */
 export const updateProjectStatusService = async (id, isActive) => {
   return await prisma.project.update({
     where: { public_id: id },
@@ -83,6 +86,7 @@ export const updateProjectStatusService = async (id, isActive) => {
   });
 };
 
+/* -------- get project by id -------- */
 export const getProjectById = async (id) => {
   const project = await prisma.project.findFirst({
     where: {
@@ -104,8 +108,6 @@ export const getProjectById = async (id) => {
           is_active: true,
           created_at: true,
         },
-
-        
       },
     },
   });
@@ -125,6 +127,7 @@ export const getProjectById = async (id) => {
   };
 };
 
+/* -------- create environment -------- */
 export const createEnvironmentService = async ({
   projectId,
   environment_name,
@@ -141,4 +144,29 @@ export const createEnvironmentService = async ({
   });
 
   return environment;
+};
+
+/* -------- get environments by project id -------- */
+export const getEnvironmentsByProjectIdService = async (projectId) => {
+  const environments = await prisma.environment.findMany({
+    where: {
+      projectId,
+      is_active: true,
+    },
+    select: {
+      public_id: true,
+      environment_name: true,
+      is_active: true,
+    },
+    apiKeys: {
+      select: {
+        public_id: true,
+        mode: true,
+        note: true,
+        expires_at: true,
+      },
+    },
+  });
+
+  return environments;
 };

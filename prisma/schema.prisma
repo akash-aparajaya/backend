@@ -235,6 +235,10 @@ model EnvironmentServiceProvider {
 
   provider Provider @relation(fields: [provider_id], references: [public_id])
 
+  provider_name String
+
+  mode String @default("sandbox")
+
   credentials Json
 
   endpoint String

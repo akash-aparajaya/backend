@@ -4,9 +4,11 @@ import {
   updateProjectStatusService,
   getProjectById,
   createEnvironmentService,
+  getEnvironmentsByProjectIdService,
 } from "../services/project.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
+/* -------- create project -------- */
 export const createProject = async (req, res) => {
   try {
     const { project_name, project_description, isActive, image_url } = req.body;
@@ -27,6 +29,7 @@ export const createProject = async (req, res) => {
   }
 };
 
+/* -------- get all projects -------- */
 export const getProjects = async (req, res) => {
   try {
     const projects = await getAllProjects();
@@ -36,6 +39,7 @@ export const getProjects = async (req, res) => {
   }
 };
 
+/* -------- get project by id -------- */
 export const getProjectId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -47,6 +51,7 @@ export const getProjectId = async (req, res) => {
   }
 };
 
+/* -------- update project status -------- */
 export const updateProjectStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -58,6 +63,7 @@ export const updateProjectStatus = async (req, res) => {
   }
 };
 
+/* -------- create environment -------- */
 export const createEnvironment = async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -72,6 +78,17 @@ export const createEnvironment = async (req, res) => {
       "Environment created successfully",
       201,
     );
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+/* -------- get environments by project id -------- */
+export const getEnvironmentsByProjectId = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const project = await getEnvironmentsByProjectIdService(projectId);
+    return successResponse(res, project, "Environments fetched successfully");
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }
