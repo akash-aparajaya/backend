@@ -89,24 +89,6 @@ model Provider {
 }
 
 // =============================================================================
-// ENVIRONMENT LIST
-// =============================================================================
-
-model EnvironmentList {
-  id Int @id @default(autoincrement())
-
-  public_id String @unique @default(cuid())
-
-  name String @unique
-
-  is_active Boolean @default(true)
-
-  created_at DateTime @default(now())
-
-  @@map("environment_lists")
-}
-
-// =============================================================================
 // USERS
 // =============================================================================
 
@@ -147,7 +129,8 @@ model User {
 
   deleted_at DateTime?
 
-  projects Project[]
+  projects             Project[]
+  environmentEmployees EnvironmentEmployee[]
 
   @@map("users")
 }
@@ -179,7 +162,8 @@ model Project {
 
   environments Environment[]
 
-  api_keys ApiKeys[]
+  api_keys             ApiKeys[]
+  environmentEmployees EnvironmentEmployee[]
 
   @@map("projects")
 }
@@ -209,7 +193,8 @@ model Environment {
 
   request_logs RequestLog[]
 
-  api_keys ApiKeys[]
+  api_keys             ApiKeys[]
+  environmentEmployees EnvironmentEmployee[]
 
   @@map("environments")
 }
@@ -333,4 +318,27 @@ model ApiKeys {
   updated_at DateTime @updatedAt
 
   @@map("api_keys")
+}
+
+model EnvironmentEmployee {
+  id Int @id @default(autoincrement())
+
+  public_id String @unique @default(cuid())
+
+  project_id String
+  project    Project @relation(fields: [project_id], references: [public_id])
+
+  environment_id String
+  environment    Environment @relation(fields: [environment_id], references: [public_id])
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [public_id])
+
+  status Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([environment_id, user_id, project_id])
+  @@map("environment_employees")
 }

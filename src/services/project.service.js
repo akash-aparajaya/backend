@@ -170,3 +170,139 @@ export const getEnvironmentsByProjectIdService = async (projectId) => {
 
   return environments;
 };
+
+/* -------- update environment by id -------- */
+export const updateEnvironmentByIdService = async (id, environment_name) => {
+  return await prisma.environment.update({
+    where: { public_id: id },
+    data: { environment_name },
+  });
+};
+
+/* -------- delete environment by id -------- */
+export const deleteEnvironmentByIdService = async (id) => {
+  return await prisma.environment.update({
+    where: { public_id: id },
+    data: { is_active: false },
+  });
+};
+
+/*-------- Assign / unassigned employee to project specific environment -------- */
+export const assignUnassignEmployeeToEnvironmentService = async (
+  environmentId,
+  project_id,
+  userIds,
+  status,
+) => {
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    throw new Error("userIds must be a non-empty array");
+  }
+
+  const updatedUsers = [];
+  const createdUsers = [];
+
+  for (const userId of userIds) {
+    // Check existing employee
+    const existingEmployee = await prisma.environmentEmployee.findFirst({
+      where: {
+        environment_id: environmentId,
+        user_id: userId,
+      },
+    });
+
+    // If employee exists -> update status
+    if (existingEmployee) {
+      await prisma.environmentEmployee.update({
+        where: {
+          public_id: existingEmployee.public_id,
+        },
+        data: {
+          status,
+        },
+      });
+
+      updatedUsers.push(userId);
+    }
+
+    // If employee does not exist -> create
+    else {
+      await prisma.environmentEmployee.create({
+        data: {
+          project_id,
+          environment_id: environmentId,
+          user_id: userId,
+          status,
+        },
+      });
+
+      createdUsers.push(userId);
+    }
+  }
+
+  return {
+    status,
+    updatedUsers,
+    createdUsers,
+    message: status
+      ? "Employees assigned successfully"
+      : "Employees unassigned successfully",
+  };
+};
+
+/* -------- get assigned and unassigned employees -------- */
+export const getAssignedAndUnassignedEmployeesService = async (
+  project_id,
+  environment_id,
+) => {
+  // Get all employees from user table
+  const employees = await prisma.user.findMany({
+    where: {
+      is_deleted: false,
+    },
+    select: {
+      public_id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      is_active: true,
+    },
+  });
+
+  if (!employees || employees.length === 0) {
+    throw new Error("No employees found");
+  }
+
+  // Get assigned employees from environment table
+  const environmentEmployees =
+    await prisma.environmentEmployee.findMany({
+      where: {
+        project_id,
+        environment_id,
+        status: true,
+      },
+      select: {
+        user_id: true,
+      },
+    });
+
+  // Convert assigned ids
+  const assignedUserIds = environmentEmployees.map(
+    (employee) => employee.user_id,
+  );
+
+  // Assigned employees
+  const assignedEmployees = employees.filter((employee) =>
+    assignedUserIds.includes(employee.public_id),
+  );
+
+  // Unassigned employees
+  const unassignedEmployees = employees.filter(
+    (employee) =>
+      !assignedUserIds.includes(employee.public_id),
+  );
+
+  return {
+    assignedEmployees,
+    unassignedEmployees,
+  };
+};
