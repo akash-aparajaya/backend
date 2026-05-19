@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "../utils/response.js";
 /* -------- DASHBOARD -------- */
 export const dashboard = async (req, res) => {
   try {
+    console.log("Dashboard controller called");
     const userId = req.user.id;
     const users = await userService.getUserById(userId);
     const statsData = await userService.getStatsData();

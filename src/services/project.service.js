@@ -135,8 +135,11 @@ export const createEnvironmentService = async ({
   if (!environment_name) {
     throw new Error("Environment name is required");
   }
-
-  const environment = await prisma.environment.create({
+console.log({
+  projectId,
+  environment_name,
+})
+  const environment = await prisma.Environment.create({
     data: {
       environment_name,
       projectId,

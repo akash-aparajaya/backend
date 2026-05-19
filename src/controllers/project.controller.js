@@ -59,7 +59,7 @@ export const getProjectId = async (req, res) => {
 export const updateProjectStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isActive } = req.query;
+    const { isActive } = req.body;
     const result = await updateProjectStatusService(id, isActive);
     return successResponse(res, result, "Project status updated successfully");
   } catch (error) {
