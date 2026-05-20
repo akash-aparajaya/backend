@@ -58,6 +58,8 @@ export const createProviderController = async (req, res) => {
       provider_id,
       credentials,
       endpoint,
+      provider_name,
+      mode,
     } = req.body;
     const provider = await providersService.assignProviderToEnvironment({
       environment_id,
@@ -65,6 +67,8 @@ export const createProviderController = async (req, res) => {
       provider_id,
       credentials,
       endpoint,
+      provider_name,
+      mode,
     });
     return successResponse(res, provider, "Provider created successfully");
   } catch (error) {

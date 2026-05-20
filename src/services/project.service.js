@@ -135,14 +135,12 @@ export const createEnvironmentService = async ({
   if (!environment_name) {
     throw new Error("Environment name is required");
   }
-console.log({
-  projectId,
-  environment_name,
-})
-  const environment = await prisma.Environment.create({
+
+  const environment = await prisma.environment.create({
     data: {
       environment_name,
-      projectId,
+
+      project_id: projectId,
     },
   });
 
@@ -153,7 +151,7 @@ console.log({
 export const getEnvironmentsByProjectIdService = async (projectId) => {
   const environments = await prisma.environment.findMany({
     where: {
-      projectId,
+      project_id: projectId,
       is_active: true,
     },
     select: {
@@ -161,14 +159,14 @@ export const getEnvironmentsByProjectIdService = async (projectId) => {
       environment_name: true,
       is_active: true,
     },
-    apiKeys: {
-      select: {
-        public_id: true,
-        mode: true,
-        note: true,
-        expires_at: true,
-      },
-    },
+    // apiKeys: {
+    //   select: {
+    //     public_id: true,
+    //     mode: true,
+    //     note: true,
+    //     expires_at: true,
+    //   },
+    // },
   });
 
   return environments;

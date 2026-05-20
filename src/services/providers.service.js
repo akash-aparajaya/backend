@@ -29,6 +29,7 @@ export const getProvidersByEnvironmentId = async (environmentId, serviceId) => {
       mode: true,
       endpoint: true,
       is_active: true,
+      credentials: true,
     },
   });
   // 🧠 Group into live & sandbox
@@ -91,10 +92,11 @@ export const assignProviderToEnvironment = async ({
   mode,
   credentials,
   endpoint,
+  provider_name,
 }) => {
   const envProvider = await prisma.environmentServiceProvider.upsert({
     where: {
-      environment_id_service_type_id_provider_id: {
+      environment_id_service_type_id_provider_id_mode: {
         environment_id,
         service_type_id,
         provider_id,
@@ -113,6 +115,7 @@ export const assignProviderToEnvironment = async ({
       credentials,
       endpoint,
       mode,
+      provider_name,
       is_active: true,
     },
   });

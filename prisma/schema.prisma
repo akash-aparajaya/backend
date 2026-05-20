@@ -222,7 +222,7 @@ model EnvironmentServiceProvider {
 
   provider_name String
 
-  mode String @default("sandbox")
+  mode String 
 
   credentials Json
 
@@ -236,7 +236,7 @@ model EnvironmentServiceProvider {
 
   request_logs RequestLog[]
 
-  @@unique([environment_id, service_type_id, provider_id])
+  @@unique([environment_id, service_type_id, provider_id, mode])
   @@map("environment_service_providers")
 }
 
