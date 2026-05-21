@@ -69,4 +69,12 @@ router.patch(
   userController.changePassword,
 );
 
+/* -------- get user full details with projects and environments -------- */
+router.get(
+  "/get-user-details-with-projects-env/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.getUserDetailsWithProjectsAndEnvironments,
+);
+
 export default router;

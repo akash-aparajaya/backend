@@ -105,3 +105,13 @@ export const changePassword = async (req, res) => {
     return errorResponse(res, "Failed to change password", error.message);
   }
 };
+
+export const getUserDetailsWithProjectsAndEnvironments = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await userService.getUserDetailsWithProjectsAndEnvironments(userId);
+    return successResponse(res, user, "User details retrieved successfully");
+  } catch (error) {
+    return errorResponse(res, "Failed to retrieve user details", error.message);
+  }
+};

@@ -96,11 +96,12 @@ export const assignProviderToEnvironment = async ({
 }) => {
   const envProvider = await prisma.environmentServiceProvider.upsert({
     where: {
-      environment_id_service_type_id_provider_id_mode: {
+      environment_id_service_type_id_provider_id_mode_is_active: {
         environment_id,
         service_type_id,
         provider_id,
         mode,
+        is_active: true,
       },
     },
 

@@ -10,6 +10,8 @@ import {
   deleteEnvironmentById,
   assignUnassignEmployeeToEnvironment,
   getAssignedAndUnassignedEmployees,
+  getAllProjectsAndEnvironments,
+  assignEnvironmentToEmployee,
 } from "../controllers/project.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
@@ -103,7 +105,7 @@ router.delete(
 
 /*-------- Assign / unassigned employee to project specific environment -------- */
 router.post(
-  "/assign-unassign-employee/:environmentId",
+  "/assign-unassign-employee",
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   assignUnassignEmployeeToEnvironment,
@@ -115,6 +117,21 @@ router.get(
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   getAssignedAndUnassignedEmployees,
+);
+
+router.get(
+  "/get-all-projects-and-environments",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  getAllProjectsAndEnvironments,
+);
+
+/* -------- assign environment in the user  creation page -------- */
+router.post(
+  "/assign-environment-to-user",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  assignEnvironmentToEmployee,
 );
 
 export default router;

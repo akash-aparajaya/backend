@@ -8,7 +8,9 @@ import {
   updateEnvironmentByIdService,
   deleteEnvironmentByIdService,
   assignUnassignEmployeeToEnvironmentService,
-  getAssignedAndUnassignedEmployeesService
+  getAssignedAndUnassignedEmployeesService,
+  getAllProjectsAndEnvironmentsService,
+  assignEnvironmentToEmployeeService
 } from "../services/project.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -124,14 +126,12 @@ export const deleteEnvironmentById = async (req, res) => {
 /* -------- assign unassign employee to project specific environment -------- */
 export const assignUnassignEmployeeToEnvironment = async (req, res) => {
   try {
-    const { environmentId } = req.params;
-
-    const { project_id, userId, status } = req.body;
+    const { project_id, environment_id, user_id, status } = req.body;
 
     const result = await assignUnassignEmployeeToEnvironmentService(
-      environmentId,
+      environment_id,
       project_id,
-      userId,
+      user_id,
       status,
     );
 
@@ -158,5 +158,39 @@ export const getAssignedAndUnassignedEmployees = async (req, res) => {
     return successResponse(res, result, "Employees fetched successfully");
   } catch (error) {
     return errorResponse(res, "Failed to fetch employees", error.message);
+  }
+};
+
+export const getAllProjectsAndEnvironments = async (req, res) => {
+  try {
+    const result = await getAllProjectsAndEnvironmentsService();
+    return successResponse(
+      res,
+      result,
+      "Projects and environments fetched successfully",
+    );
+  } catch (error) {
+    return errorResponse(
+      res,
+      "Failed to fetch projects and environments",
+      error.message,
+    );
+  }
+};
+
+export const assignEnvironmentToEmployee = async (req, res) => {
+  try {
+    const result = await assignEnvironmentToEmployeeService(req.body);
+    return successResponse(
+      res,
+      result,
+      "Environment assigned to employee successfully",
+    );
+  } catch (error) {
+    return errorResponse(
+      res,
+      "Failed to assign environment to employee",
+      error.message,
+    );
   }
 };

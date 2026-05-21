@@ -134,3 +134,19 @@ export const deleteUser = async (userId) =>
     where: { public_id: userId },
     data: { is_deleted: true },
   });
+
+export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
+  return await prisma.user.findUnique({
+    where: { public_id: userId },
+    select: {
+      id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      is_active: true,
+      last_login_at: true,
+      created_at: true,
+      is_deleted: true,
+    },
+  });
+};
