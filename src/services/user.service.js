@@ -136,17 +136,62 @@ export const deleteUser = async (userId) =>
   });
 
 export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
-  return await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { public_id: userId },
     select: {
-      id: true,
+      public_id: true,
       user_name: true,
       email: true,
       role: true,
       is_active: true,
-      last_login_at: true,
-      created_at: true,
-      is_deleted: true,
+
+      environmentEmployees: {
+        where: { status: true },
+        select: {
+          project: {
+            select: {
+              public_id: true,
+              project_name: true,
+              project_description: true,
+            },
+          },
+          environment: {
+            select: {
+              public_id: true,
+              environment_name: true,
+            },
+          },
+        },
+      },
     },
   });
+
+  if (!user) return null;
+
+  // 🔥 group into clean structure
+  const projectMap = new Map();
+
+  user.environmentEmployees.forEach((item) => {
+    const projectId = item.project.public_id;
+
+    if (!projectMap.has(projectId)) {
+      projectMap.set(projectId, {
+        public_id: projectId,
+        project_name: item.project.project_name,
+        project_description: item.project.project_description,
+        environments: [],
+      });
+    }
+
+    projectMap.get(projectId).environments.push(item.environment);
+  });
+
+  return {
+    public_id: user.public_id,
+    user_name: user.user_name,
+    email: user.email,
+    role: user.role,
+    is_active: user.is_active,
+    projects: Array.from(projectMap.values()),
+  };
 };
