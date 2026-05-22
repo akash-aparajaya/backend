@@ -248,6 +248,7 @@ export const getAssignedAndUnassignedEmployeesService = async (
   project_id,
   environment_id,
 ) => {
+  console.log(project_id, environment_id, "getAssignedAndUnassignedEmployees");
   // Get all employees from user table
   const employees = await prisma.user.findMany({
     where: {
@@ -292,6 +293,7 @@ export const getAssignedAndUnassignedEmployeesService = async (
   const unassignedEmployees = employees.filter(
     (employee) => !assignedUserIds.includes(employee.public_id),
   );
+  // console.log(assignedEmployees, unassignedEmployees);
 
   return {
     assignedEmployees,

@@ -21,7 +21,7 @@ router.get("/get-api-keys", getApiKeysController);
 /* -------- REGENERATE API KEY -------- */
 router.patch(
   "/regenerate-api-key/:id",
-  validateApiKey,
+  // validateApiKey,
   regenerateApiKeyController,
 );
 

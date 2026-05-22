@@ -4,7 +4,6 @@ import { successResponse, errorResponse } from "../utils/response.js";
 /* -------- DASHBOARD -------- */
 export const dashboard = async (req, res) => {
   try {
-    console.log("Dashboard controller called");
     const userId = req.user.id;
     const users = await userService.getUserById(userId);
     const statsData = await userService.getStatsData();
@@ -115,3 +114,15 @@ export const getUserDetailsWithProjectsAndEnvironments = async (req, res) => {
     return errorResponse(res, "Failed to retrieve user details", error.message);
   }
 };
+
+export const removeEnvironmentFromUser = async (req, res) => {
+  try {
+    const user_id = req.body.user_id;
+    const environment_id = req.body.environment_id;
+    const project_id = req.body.project_id;
+    await userService.removeEnvironmentFromUser(user_id, environment_id, project_id);
+    return successResponse(res, null, "Environment removed from user successfully");
+  } catch (error) {
+    return errorResponse(res, "Failed to remove environment from user", error.message);
+  }
+};  

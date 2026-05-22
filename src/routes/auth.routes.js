@@ -5,6 +5,7 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  updatePassword
 } from "../controllers/auth.controller.js";
 
 import { createAdmin } from "../controllers/admin.controller.js";
@@ -24,6 +25,9 @@ router.post("/forgotPassword", forgotPassword);
 
 /* -------- RESET PASSWORD -------- */
 router.post("/resetPassword", resetPassword);
+
+/* -------- update password -------- */
+router.patch("/update-password", verifyToken, updatePassword);
 
 /* -------- logout -------- */
 router.get("/logout", logout);

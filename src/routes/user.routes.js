@@ -77,4 +77,12 @@ router.get(
   userController.getUserDetailsWithProjectsAndEnvironments,
 );
 
+/* remove the environment from the user  */
+router.patch(
+  "/remove-environment-from-user",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  userController.removeEnvironmentFromUser,
+);
+
 export default router;

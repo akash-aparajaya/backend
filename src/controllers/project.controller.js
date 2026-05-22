@@ -148,7 +148,10 @@ export const assignUnassignEmployeeToEnvironment = async (req, res) => {
 /* -------- get assigned and unassigned employees -------- */
 export const getAssignedAndUnassignedEmployees = async (req, res) => {
   try {
-    const { project_id, environment_id } = req.body;
+    const { projectId, environmentId } = req.params;
+
+    const project_id = projectId;
+    const environment_id = environmentId;
 
     const result = await getAssignedAndUnassignedEmployeesService(
       project_id,

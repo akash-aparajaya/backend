@@ -33,7 +33,7 @@ export const loginService = async ({ email, password }) => {
   await prisma.user.update({
     where: { public_id: user.public_id },
     data: {
-        last_login_at: new Date(),
+      last_login_at: new Date(),
       refresh_token_hash: hash,
     },
   });
@@ -164,14 +164,14 @@ export const forgotPasswordService = async ({ email }) => {
 export const resetPasswordService = async (token, newPassword) => {
   const user = await prisma.user.findFirst({
     where: {
-      resetToken: token,
-      resetTokenExpiry: {
+      reset_token: token,
+      reset_token_expiry: {
         gte: new Date(),
       },
     },
   });
-
   if (!user) {
+    console.log(user, "user");
     throw new Error("Invalid or expired token");
   }
 
@@ -182,6 +182,29 @@ export const resetPasswordService = async (token, newPassword) => {
       password: password,
       resetToken: null,
       resetTokenExpiry: null,
+    },
+  });
+
+  return { message: "Password reset successful" };
+};
+
+export const updatePasswordService = async (user_id, newPassword) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      public_id: user_id,
+      is_active: true,
+      is_deleted: false,
+    },
+  });
+  if (!user) {
+    throw new Error("Invalid or expired token");
+  }
+
+  let password = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { public_id: user.public_id },
+    data: {
+      password: password,
     },
   });
 

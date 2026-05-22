@@ -10,6 +10,15 @@ export const createUser = async (
   is_active,
 ) => {
   const hashedPassword = await bcrypt.hash(password, 12);
+  const isEmailExists = await prisma.user.findUnique({
+    where: {
+      email: email,
+    },
+  });
+
+  if (isEmailExists) {
+    throw new Error("Email already exists");
+  }
   return await prisma.user.create({
     data: {
       user_name,
@@ -82,20 +91,19 @@ export const getUserById = async (id) => {
 
 /*-------- get stats data -------- */
 export const getStatsData = async () => {
-  const [adminCount, activeProjects] = await Promise.all([
+  const [adminCount, activeServices, activeProjects] = await Promise.all([
     prisma.user.count({
       where: {
-        role: "ADMIN",
+        // role: "ADMIN",
         is_deleted: false,
       },
     }),
 
-    // prisma.service.groupBy({
-    //   by: ["name"],
-    //   where: {
-    //     is_active: true,
-    //   },
-    // }),
+    prisma.ServiceType.count({
+      where: {
+        is_active: true,
+      },
+    }),
 
     prisma.project.count({
       where: {
@@ -106,7 +114,7 @@ export const getStatsData = async () => {
 
   return {
     totalAdmins: adminCount,
-    totalServices: 2, // unique service names
+    totalServices: activeServices,
     totalActiveProjects: activeProjects,
   };
 };
@@ -194,4 +202,23 @@ export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
     is_active: user.is_active,
     projects: Array.from(projectMap.values()),
   };
+};
+
+export const removeEnvironmentFromUser = async (
+  user_id,
+  environment_id,
+  project_id,
+) => {
+  await prisma.environmentEmployee.update({
+    where: {
+      environment_id_user_id_project_id: {
+        environment_id,
+        user_id,
+        project_id,
+      },
+    },
+    data: {
+      status: false,
+    },
+  });
 };

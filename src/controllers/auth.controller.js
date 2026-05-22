@@ -4,6 +4,7 @@ import {
   logoutService,
   forgotPasswordService,
   resetPasswordService,
+  updatePasswordService,
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -65,6 +66,18 @@ export const resetPassword = async (req, res) => {
     await resetPasswordService(token, password);
     return successResponse(res, null, "Password reset successful", 200);
   } catch (err) {
-    errorResponse(res, err.message);
+    errorResponse(res, "Failed to retrieve user data", err.message);
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const userId = req.user.id;
+    console.log(userId, password);
+    await updatePasswordService(userId, password);
+    return successResponse(res, null, "Password changed successfully", 201);
+  } catch (error) {
+    return errorResponse(res, "Failed to change password", error.message);
   }
 };
