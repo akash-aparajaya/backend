@@ -85,4 +85,12 @@ router.patch(
   userController.removeEnvironmentFromUser,
 );
 
+router.get(
+  "/user-assigned-projects/:user_id",
+  // verifyToken,
+  // allowRoles(["SUPER_ADMIN", "ADMIN", "USER"]),
+  userController.userAssignedProjectsEnvironments,
+);
+
+
 export default router;

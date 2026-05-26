@@ -126,3 +126,16 @@ export const removeEnvironmentFromUser = async (req, res) => {
     return errorResponse(res, "Failed to remove environment from user", error.message);
   }
 };  
+
+export const userAssignedProjectsEnvironments = async (req, res) => {
+  try {
+    const user_id = req.params.user_id;
+    if (!user_id) {
+      return errorResponse(res, "User ID is required");
+    }
+    const result = await userService.userAssignedProjectsEnvironments(user_id);
+    return successResponse(res, result, "User assigned projects and environments retrieved successfully");
+  } catch (error) {
+    return errorResponse(res, "Failed to retrieve user assigned projects and environments", error.message);
+  }
+}
