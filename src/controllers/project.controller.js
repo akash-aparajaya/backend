@@ -3,10 +3,13 @@ import {
   getAllProjects,
   updateProjectStatusService,
   getProjectById,
+  updateProjectService,
+  deleteProjectService,
   createEnvironmentService,
   getEnvironmentsByProjectIdService,
   updateEnvironmentByIdService,
   deleteEnvironmentByIdService,
+  cloneEnvironmentByIdService,
   assignUnassignEmployeeToEnvironmentService,
   getAssignedAndUnassignedEmployeesService,
   getAllProjectsAndEnvironmentsService,
@@ -69,6 +72,52 @@ export const updateProjectStatus = async (req, res) => {
   }
 };
 
+/* -------- update project -------- */
+export const updateProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      project_name,
+      project_description,
+      isActive,
+      image_url,
+    } = req.body;
+
+    const result = await updateProjectService(id, {
+      project_name,
+      project_description,
+      isActive,
+      image_url,
+    });
+
+    return successResponse(
+      res,
+      result,
+      "Project updated successfully",
+    );
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+/* -------- delete project -------- */
+export const deleteProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await deleteProjectService(id);
+
+    return successResponse(
+      res,
+      result,
+      "Project deleted successfully",
+    );
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
 /* -------- create environment -------- */
 export const createEnvironment = async (req, res) => {
   try {
@@ -103,15 +152,38 @@ export const getEnvironmentsByProjectId = async (req, res) => {
 /* -------- update environment by id -------- */
 export const updateEnvironmentById = async (req, res) => {
   try {
+
     const { id } = req.params;
-    const { environment_name } = req.body;
-    const result = await updateEnvironmentByIdService(id, environment_name);
-    return successResponse(res, result, "Environment updated successfully");
+
+    const {
+      environment_name,
+      is_active,
+    } = req.body;
+
+    const result =
+      await updateEnvironmentByIdService(
+        id,
+        {
+          environment_name,
+          is_active,
+        }
+      );
+
+    return successResponse(
+      res,
+      result,
+      "Environment updated successfully"
+    );
+
   } catch (error) {
-    return errorResponse(res, error.message, 500);
+
+    return errorResponse(
+      res,
+      error.message,
+      500
+    );
   }
 };
-
 /* -------- delete environment by id -------- */
 export const deleteEnvironmentById = async (req, res) => {
   try {
@@ -120,6 +192,37 @@ export const deleteEnvironmentById = async (req, res) => {
     return successResponse(res, result, "Environment deleted successfully");
   } catch (error) {
     return errorResponse(res, error.message, 500);
+  }
+};
+
+export const cloneEnvironmentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      environment_name,
+    } = req.body;
+
+    const result =
+      await cloneEnvironmentByIdService(
+        id,
+        environment_name
+      );
+
+    return successResponse(
+      res,
+      result,
+      "Environment cloned successfully"
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    return errorResponse(
+      res,
+      error.message || "Failed to clone environment",
+      500
+    );
   }
 };
 
@@ -148,19 +251,32 @@ export const assignUnassignEmployeeToEnvironment = async (req, res) => {
 /* -------- get assigned and unassigned employees -------- */
 export const getAssignedAndUnassignedEmployees = async (req, res) => {
   try {
+
     const { projectId, environmentId } = req.params;
 
     const project_id = projectId;
     const environment_id = environmentId;
+    const result =
+      await getAssignedAndUnassignedEmployeesService(
+        project_id,
+        environment_id,
+      );
 
-    const result = await getAssignedAndUnassignedEmployeesService(
-      project_id,
-      environment_id,
+    return successResponse(
+      res,
+      result,
+      "Employees fetched successfully"
     );
 
-    return successResponse(res, result, "Employees fetched successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to fetch employees", error.message);
+
+    console.error(error);
+
+    return errorResponse(
+      res,
+      error.message || "Failed to fetch employees",
+      500
+    );
   }
 };
 

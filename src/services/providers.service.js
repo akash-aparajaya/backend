@@ -16,40 +16,65 @@ export const getAllServices = async () => {
 };
 
 // * -------- get providers by environment id -------- */
-export const getProvidersByEnvironmentId = async (environmentId, serviceId) => {
-  const providers = await prisma.environmentServiceProvider.findMany({
-    where: {
-      environment_id: environmentId,
-      service_type_id: serviceId,
-      is_active: true,
-    },
-    select: {
-      public_id: true,
-      provider_name: true,
-      mode: true,
-      endpoint: true,
-      is_active: true,
-      credentials: true,
-    },
-  });
-  // 🧠 Group into live & sandbox
-  const result = {
-    live: [],
-    sandbox: [],
-    live_count: 0,
-    sandbox_count: 0,
+export const getProvidersByEnvironmentId =
+  async (environmentId, serviceId) => {
+
+    const providers =
+      await prisma.environmentServiceProvider.findMany({
+        where: {
+          environment_id: environmentId,
+          service_type_id: serviceId,
+          is_active: true,
+        },
+
+        select: {
+          public_id: true,
+          provider_name: true,
+          mode: true,
+          is_active: true,
+          credentials: true,
+
+          provider: {
+            select: {
+              base_endpoint: true,
+            },
+          },
+        },
+      });
+
+    const formattedProviders =
+      providers.map((provider) => ({
+        ...provider,
+
+        endpoint:
+          provider.provider?.base_endpoint || "",
+      }));
+
+    const result = {
+      live: [],
+      sandbox: [],
+      live_count: 0,
+      sandbox_count: 0,
+    };
+
+    formattedProviders.forEach((provider) => {
+
+      if (provider.mode === "live") {
+
+        result.live.push(provider);
+
+        result.live_count++;
+
+      } else {
+
+        result.sandbox.push(provider);
+
+        result.sandbox_count++;
+      }
+    });
+
+    return result;
   };
-  providers.forEach((provider) => {
-    if (provider.mode === "live") {
-      result.live.push(provider);
-      result.live_count++;
-    } else {
-      result.sandbox.push(provider);
-      result.sandbox_count++;
-    }
-  });
-  return result;
-};
 
 //* -------- get providers by service id -------- */
 export const getProvidersByServiceId = async (serviceId) => {
@@ -134,8 +159,11 @@ export const updateProviderInEnvironment = async ({ id, credentials }) => {
 
 //* -------- delete provider -------- */
 export const deleteProviderFromEnvironment = async (id) => {
-  return await prisma.environmentServiceProvider.update({
-    where: { public_id: id },
-    data: { is_active: false },
+
+  return await prisma.environmentServiceProvider.delete({
+    where: {
+      public_id: id,
+    },
   });
+
 };

@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import prisma from "../config/prisma.js";
+import e from "express";
 
 export const createApiKeyService = async (
   project_id,
@@ -53,9 +54,9 @@ export const createApiKeyService = async (
     },
   });
 
-      
-      
-      
+
+
+
   return { ...createdApiKey, key: apiKey }; // return createdApiKey;
 };
 
@@ -63,7 +64,7 @@ export const regenerateApiKeyService = async (apiKeyId) => {
   // find existing key
   const existingApiKey = await prisma.apiKeys.findFirst({
     where: {
-      id: apiKeyId,
+      public_id: apiKeyId,
       is_deleted: false,
     },
   });
@@ -87,7 +88,7 @@ export const regenerateApiKeyService = async (apiKeyId) => {
 
   // update DB with new hash
   const updatedApiKey = await prisma.apiKeys.update({
-    where: { id: apiKeyId },
+    where: { public_id: apiKeyId },
     data: {
       api_key: hashedKey,
       expires_at,
@@ -96,7 +97,11 @@ export const regenerateApiKeyService = async (apiKeyId) => {
     },
   });
 
-  return updatedApiKey;
+  return {
+    ...updatedApiKey,
+    public_id: existingApiKey.public_id,
+    key: newRawKey,
+  };
 };
 
 export const getApiKeysService = async () => {
@@ -115,7 +120,7 @@ export const getApiKeysService = async () => {
 export const deleteApiKeyService = async (apiKeyId) => {
   const existingApiKey = await prisma.apiKeys.findFirst({
     where: {
-      id: apiKeyId,
+      public_id: apiKeyId,
       is_deleted: false,
     },
   });
@@ -124,9 +129,9 @@ export const deleteApiKeyService = async (apiKeyId) => {
     throw new Error("API key not found");
   }
 
-  await prisma.apiKeys.update({
+  await prisma.apiKeys.updateMany({
     where: {
-      id: apiKeyId,
+      public_id: apiKeyId,
     },
     data: {
       is_deleted: true,

@@ -38,7 +38,7 @@ export const createProjectService = async ({
 
   return {
     project: {
-      id: project.id,
+      id: project.public_id,
       name: project.project_name,
       image_url: finalImageUrl,
       is_active: project.is_active,
@@ -49,10 +49,16 @@ export const createProjectService = async ({
 /* -------- get all projects -------- */
 export const getAllProjects = async () => {
   const projectData = await prisma.project.findMany({
+    where: {
+      is_deleted: false,
+    },
+
     select: {
       id: true,
       public_id: true,
       project_name: true,
+      project_description: true,
+      image_url: true,
       is_active: true,
       created_at: true,
 
@@ -68,11 +74,15 @@ export const getAllProjects = async () => {
       created_at: "desc",
     },
   });
+
   return projectData.map((project) => ({
     public_id: project?.public_id,
     project_name: project?.project_name,
+    project_description: project?.project_description,
+    image_url: project?.image_url,
     is_active: project?.is_active,
     created_at: new Date(project?.created_at).toDateString(),
+
     user: project?.user?.user_name,
     user_public_id: project?.user?.public_id,
   }));
@@ -147,45 +157,216 @@ export const createEnvironmentService = async ({
   return environment;
 };
 
+export const updateProjectService = async (
+  id,
+  {
+    project_name,
+    project_description,
+    isActive,
+    image_url,
+  },
+) => {
+  let finalImageUrl;
+
+  // upload new image if provided
+  if (image_url) {
+    const result = await cloudinary.uploader.upload(image_url, {
+      folder: "tesseract-projects",
+    });
+
+    finalImageUrl = result.secure_url;
+  }
+
+  const updatedProject = await prisma.project.update({
+    where: {
+      public_id: id,
+    },
+
+    data: {
+      ...(project_name !== undefined && {
+        project_name,
+      }),
+      ...(project_description !== undefined && {
+        project_description,
+      }),
+      ...(typeof isActive === "boolean" && {
+        is_active: isActive,
+      }),
+      ...(finalImageUrl && {
+        image_url: finalImageUrl,
+      }),
+    },
+  });
+
+  return updatedProject;
+};
+
+export const deleteProjectService = async (id) => {
+  return await prisma.project.update({
+    where: {
+      public_id: id,
+    },
+
+    data: {
+      is_deleted: true,
+    },
+  });
+};
+
 /* -------- get environments by project id -------- */
 export const getEnvironmentsByProjectIdService = async (projectId) => {
   const environments = await prisma.environment.findMany({
     where: {
       project_id: projectId,
-      is_active: true,
+      is_deleted: false,
     },
+
+    orderBy: {
+      created_at: "asc",
+    },
+
     select: {
       public_id: true,
       environment_name: true,
       is_active: true,
+      created_at: true,
     },
-    // apiKeys: {
-    //   select: {
-    //     public_id: true,
-    //     mode: true,
-    //     note: true,
-    //     expires_at: true,
-    //   },
-    // },
   });
 
   return environments;
 };
 
 /* -------- update environment by id -------- */
-export const updateEnvironmentByIdService = async (id, environment_name) => {
+export const updateEnvironmentByIdService = async (
+  id,
+  data
+) => {
+
   return await prisma.environment.update({
-    where: { public_id: id },
-    data: { environment_name },
+    where: {
+      public_id: id,
+    },
+
+    data: {
+      ...(data.environment_name !== undefined && {
+        environment_name: data.environment_name,
+      }),
+
+      ...(typeof data.is_active === "boolean" && {
+        is_active: data.is_active,
+      }),
+    },
   });
 };
 
 /* -------- delete environment by id -------- */
-export const deleteEnvironmentByIdService = async (id) => {
+export const deleteEnvironmentByIdService = async (
+  id
+) => {
+
+  // CHECK PROVIDERS EXIST
+  const providers =
+    await prisma.environmentServiceProvider.count({
+      where: {
+        environment_id: id,
+        is_active: true,
+      },
+    });
+
+  if (providers > 0) {
+    throw new Error(
+      "Cannot delete environment with active providers"
+    );
+  }
+
+  // SOFT DELETE
   return await prisma.environment.update({
-    where: { public_id: id },
-    data: { is_active: false },
+    where: {
+      public_id: id,
+    },
+    data: {
+      is_deleted: true,
+    },
   });
+};
+
+export const cloneEnvironmentByIdService = async (
+  id,
+  environment_name
+) => {
+
+  // GET SOURCE ENVIRONMENT
+  const sourceEnvironment =
+    await prisma.environment.findUnique({
+      where: {
+        public_id: id,
+      },
+    });
+
+  if (!sourceEnvironment) {
+    throw new Error("Environment not found");
+  }
+
+  // CREATE NEW ENVIRONMENT
+  const clonedEnvironment =
+    await prisma.environment.create({
+      data: {
+        project_id: sourceEnvironment.project_id,
+        environment_name,
+        is_active: true,
+      },
+    });
+
+  // GET ALL PROVIDERS
+  const providers =
+    await prisma.environmentServiceProvider.findMany({
+      where: {
+        environment_id: sourceEnvironment.public_id,
+      },
+    });
+
+  // CLONE PROVIDERS
+  for (const provider of providers) {
+
+    const credentials =
+      typeof provider.credentials === "object" &&
+        provider.credentials !== null
+        ? { ...provider.credentials }
+        : {};
+
+    // REMOVE TOKENS / API KEYS
+    delete credentials.api_key;
+    delete credentials.token;
+    delete credentials.access_token;
+
+    await prisma.environmentServiceProvider.create({
+      data: {
+        environment_id:
+          clonedEnvironment.public_id,
+
+        service_type_id:
+          provider.service_type_id,
+
+        provider_id:
+          provider.provider_id,
+
+        provider_name:
+          provider.provider_name,
+
+        credentials,
+
+        mode:
+          provider.mode,
+
+        endpoint:
+          provider.endpoint,
+
+        is_active: true,
+      },
+    });
+  }
+
+  return clonedEnvironment;
 };
 
 /*-------- Assign / unassigned employee to project specific environment -------- */

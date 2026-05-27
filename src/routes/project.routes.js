@@ -4,10 +4,13 @@ import {
   getProjects,
   getProjectId,
   updateProjectStatus,
+  updateProject,
+  deleteProject,
   createEnvironment,
   getEnvironmentsByProjectId,
   updateEnvironmentById,
   deleteEnvironmentById,
+  cloneEnvironmentById,
   assignUnassignEmployeeToEnvironment,
   getAssignedAndUnassignedEmployees,
   getAllProjectsAndEnvironments,
@@ -60,6 +63,7 @@ router.patch(
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   upload.single("image_url"),
+  updateProject,
 );
 
 /* -------- SOFT DELETE PROJECT -------- */
@@ -67,8 +71,8 @@ router.delete(
   "/delete-project/:id",
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  deleteProject,
 );
-
 /`*-------- ENVIRONMENT ROUTES -------- *`/;
 
 /* -------- GET ENVIRONMENTS BY PROJECT ID -------- */
@@ -99,6 +103,14 @@ router.delete(
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   deleteEnvironmentById,
+);
+
+/* -------- CLONE ENVIRONMENT -------- */
+router.post(
+  "/clone-environment/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  cloneEnvironmentById,
 );
 
 /`*-------- ASSIGN - UNASSIGN EMPLOYEE ROUTES -------- *`/;

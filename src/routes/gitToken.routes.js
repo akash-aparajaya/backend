@@ -26,6 +26,6 @@ router.patch(
 );
 
 /* -------- DELETE API KEY -------- */
-router.delete("/delete-api-key/:id", validateApiKey, deleteApiKeyController);
+router.delete("/delete-api-key/:id", deleteApiKeyController);
 
 export default router;

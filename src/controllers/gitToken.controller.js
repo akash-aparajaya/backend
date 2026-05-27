@@ -20,7 +20,11 @@ export const createApiKeyController = async (req, res) => {
     );
     return successResponse(res, apiKey, "API key created successfully", 201);
   } catch (error) {
-    return errorResponse(res, "Failed to create API key", error.message);
+    return errorResponse(
+      res,
+      error.message || "Failed to create API key",
+      500
+    );
   }
 };
 
@@ -37,7 +41,11 @@ export const regenerateApiKeyController = async (req, res) => {
       200,
     );
   } catch (error) {
-    return errorResponse(res, "Failed to regenerate API key", error.message);
+    return errorResponse(
+      res,
+      error.message || "Failed to regenerate API key",
+      500
+    );
   }
 };
 
@@ -47,7 +55,11 @@ export const getApiKeysController = async (req, res) => {
 
     return successResponse(res, apiKeys, "API keys fetched successfully", 200);
   } catch (error) {
-    return errorResponse(res, "Failed to fetch API keys", error.message);
+    return errorResponse(
+      res,
+      error.message || "Failed to fetch API keys",
+      500
+    );
   }
 };
 
@@ -59,6 +71,13 @@ export const deleteApiKeyController = async (req, res) => {
 
     return successResponse(res, null, "API key deleted successfully", 200);
   } catch (error) {
-    return errorResponse(res, "Failed to delete API key", error.message);
+
+    console.log("DELETE TOKEN ERROR:", error);
+
+    return errorResponse(
+      res,
+      error.message || "Failed to delete API key",
+      500
+    );
   }
 };
