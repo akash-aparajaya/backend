@@ -1,7 +1,7 @@
 import app from "./app.js";
 import prisma from "./config/prisma.js";
 import logger from "./utils/logger.js";
-import { redisConnection } from "./config/redis.js";
+// import { redisConnection } from "./config/redis.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,9 +11,9 @@ const startServer = async () => {
     await prisma.$connect();
     logger.verbose("💾 Database connected");
 
-    // ✅ Redis
-    await redisConnection.ping();
-    logger.verbose("⚡ Redis connected");
+    // // ✅ Redis
+    // await redisConnection.ping();
+    // logger.verbose("⚡ Redis connected");
 
     // ✅ Start server
     app.listen(PORT, () => {

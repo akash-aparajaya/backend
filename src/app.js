@@ -8,27 +8,27 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 
-import { createBullBoard } from "@bull-board/api";
-import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
-import { ExpressAdapter } from "@bull-board/express";
+// import { createBullBoard } from "@bull-board/api";
+// import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+// import { ExpressAdapter } from "@bull-board/express";
 
-//queue imports
-import { smsQueue } from "./queues/sms.queue.js";
-import { emailQueue } from "./queues/email.queue.js";
+// //queue imports
+// import { smsQueue } from "./queues/sms.queue.js";
+// import { emailQueue } from "./queues/email.queue.js";
 
 dotenv.config();
 
 const app = express();
 
-const serverAdapter = new ExpressAdapter();
-serverAdapter.setBasePath("/admin/queues");
+// const serverAdapter = new ExpressAdapter();
+// serverAdapter.setBasePath("/admin/queues");
 
-createBullBoard({
-  queues: [new BullMQAdapter(emailQueue), new BullMQAdapter(smsQueue)],
-  serverAdapter,
-});
+// createBullBoard({
+//   queues: [new BullMQAdapter(emailQueue), new BullMQAdapter(smsQueue)],
+//   serverAdapter,
+// });
 
-app.use("/admin/queues", serverAdapter.getRouter());
+// app.use("/admin/queues", serverAdapter.getRouter());
 
 /* ---------------- SECURITY ---------------- */
 app.use(helmet()); // Secure HTTP headers

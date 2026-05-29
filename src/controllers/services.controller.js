@@ -1,7 +1,7 @@
 import * as smsService from "../services/twilio.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
-import { smsQueue } from "../queues/sms.queue.js";
-import { emailQueue } from "../queues/email.queue.js";
+// import { smsQueue } from "../queues/sms.queue.js";
+// import { emailQueue } from "../queues/email.queue.js";
 import * as providersService from "../services/providers.service.js";
 
 /* -------- get all Services -------- */

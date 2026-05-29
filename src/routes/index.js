@@ -5,7 +5,7 @@ import userRoutes from "./user.routes.js";
 import services from "./services.routes.js";
 import gitTokenRoutes from "./gitToken.routes.js";
 import logger from "../utils/logger.js";
-import { redisConnection } from "../config/redis.js";
+// import { redisConnection } from "../config/redis.js";
 const router = express.Router();
 
 //* -------- LOGGING -------- *
