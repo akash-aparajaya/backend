@@ -522,3 +522,25 @@ export const assignEnvironmentToEmployeeService = async (data) => {
   const result = await prisma.environmentEmployee.createMany({ data });
   return result;
 };
+
+export const reorderProvidersService =
+  async (providers) => {
+
+    const updates =
+      providers.map((provider, index) => {
+
+        return prisma.environmentServiceProvider.update({
+          where: {
+            public_id: provider.public_id,
+          },
+
+          data: {
+            sort_order: index,
+          },
+        });
+      });
+
+    await prisma.$transaction(updates);
+
+    return true;
+  };

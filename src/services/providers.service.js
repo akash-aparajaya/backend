@@ -27,12 +27,17 @@ export const getProvidersByEnvironmentId =
           is_active: true,
         },
 
+        orderBy: {
+          sort_order: "asc",
+        },
+
         select: {
           public_id: true,
           provider_name: true,
           mode: true,
           is_active: true,
           credentials: true,
+          sort_order: true,
 
           provider: {
             select: {

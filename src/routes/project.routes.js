@@ -14,7 +14,7 @@ import {
   assignUnassignEmployeeToEnvironment,
   getAssignedAndUnassignedEmployees,
   getAllProjectsAndEnvironments,
-  assignEnvironmentToEmployee,
+  assignEnvironmentToEmployee, reorderProviders,
 } from "../controllers/project.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
@@ -144,6 +144,14 @@ router.post(
   verifyToken,
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   assignEnvironmentToEmployee,
+);
+
+/* -------- reorder providers -------- */
+router.patch(
+  "/reorder-providers",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  reorderProviders,
 );
 
 export default router;

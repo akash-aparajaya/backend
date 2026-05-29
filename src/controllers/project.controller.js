@@ -13,7 +13,8 @@ import {
   assignUnassignEmployeeToEnvironmentService,
   getAssignedAndUnassignedEmployeesService,
   getAllProjectsAndEnvironmentsService,
-  assignEnvironmentToEmployeeService
+  assignEnvironmentToEmployeeService,
+  reorderProvidersService,
 } from "../services/project.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -310,6 +311,35 @@ export const assignEnvironmentToEmployee = async (req, res) => {
       res,
       "Failed to assign environment to employee",
       error.message,
+    );
+  }
+};
+
+export const reorderProviders = async (req, res) => {
+
+  try {
+
+    const { providers } = req.body;
+
+    const result =
+      await reorderProvidersService(
+        providers
+      );
+
+    return successResponse(
+      res,
+      result,
+      "Providers reordered successfully"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    return errorResponse(
+      res,
+      error.message,
+      500
     );
   }
 };

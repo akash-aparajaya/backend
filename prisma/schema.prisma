@@ -234,6 +234,8 @@ model EnvironmentServiceProvider {
 
   is_active Boolean @default(true)
 
+  sort_order Int @default(0)
+
   created_at DateTime @default(now())
 
   updated_at DateTime @updatedAt
