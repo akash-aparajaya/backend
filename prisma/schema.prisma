@@ -241,11 +241,11 @@ model EnvironmentServiceProvider {
 
   provider_name String
 
-  mode String
+  mode ApiKeyMode
 
   credentials Json
 
-  endpoint String
+  provider_slug String?
 
   is_active Boolean @default(true)
 
@@ -353,7 +353,7 @@ model SmsQueue {
   project_id     String?
   environment_id String?
   provider_id    String?
-  mode           String?
+  mode           ApiKeyMode
 
   // Message details
   type          MessageType
@@ -362,8 +362,9 @@ model SmsQueue {
   template_name String?
 
   // Queue control
-  status   QueueStatus     @default(PENDING)
-  priority PrioritySegment @default(MEDIUM)
+  status         QueueStatus     @default(PENDING)
+  priority       PrioritySegment @default(MEDIUM)
+  priority_value Int             @default(2)
 
   // Idempotency (prevents duplicate requests)
   idempotency_key String? @unique
@@ -501,3 +502,4 @@ model WhatsAppQueue {
   @@index([provider_id])
   @@index([environment_id])
 }
+

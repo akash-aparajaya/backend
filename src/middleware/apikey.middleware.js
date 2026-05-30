@@ -25,12 +25,12 @@ export const validateApiKey = async (req, res, next) => {
     });
 
     if (!apiKey) {
-      return res.status(403).json({ error: "Invalid API key" });
+      return res.status(403).json({ success: false, message: "Invalid API key" });
     }
 
     // check expiry
     if (apiKey.expires_at && new Date() > apiKey.expires_at) {
-      return res.status(403).json({ error: "API key expired" });
+      return res.status(403).json({success: false, message: "API key expired" });
     }
 
     // update last used

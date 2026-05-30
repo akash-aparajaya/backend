@@ -1,4 +1,3 @@
-import * as smsService from "../services/twilio.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 // import { smsQueue } from "../queues/sms.queue.js";
 // import { emailQueue } from "../queues/email.queue.js";
@@ -58,18 +57,18 @@ export const createProviderController = async (req, res) => {
       service_type_id,
       provider_id,
       credentials,
-      endpoint,
       provider_name,
       mode,
+      provider_slug,
     } = req.body;
     const provider = await providersService.assignProviderToEnvironment({
       environment_id,
       service_type_id,
       provider_id,
       credentials,
-      endpoint,
       provider_name,
       mode,
+      provider_slug,
     });
     return successResponse(res, provider, "Provider created successfully");
   } catch (error) {
@@ -108,6 +107,13 @@ export const sendSmsController = async (req, res) => {
   try {
     const data = req.body;
 
+    const PRIORITY_MAP = {
+      CRITICAL: 4,
+      HIGH: 3,
+      MEDIUM: 2,
+      LOW: 1,
+    };
+
     const context = {
       project_id: req.project_id,
       environment_id: req.environment_id,
@@ -122,6 +128,7 @@ export const sendSmsController = async (req, res) => {
       "recipient",
       "idempotency_key",
       "template_name",
+      "priority",
     ];
 
     const missingFields = requiredFields.filter((f) => !data[f]);
@@ -145,6 +152,9 @@ export const sendSmsController = async (req, res) => {
         environment_id: context.environment_id,
         mode: context.mode,
         request_payload: data,
+        priority: data.priority,
+        priority_value: PRIORITY_MAP[data.priority],
+       scheduled_at: new Date().toISOString(),
       });
 
       return res.status(201).json({
@@ -197,7 +207,6 @@ export const sendEmailController = async (req, res) => {
       success: true,
       message: "Email queued successfully",
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -234,7 +243,6 @@ export const sendWhatsAppController = async (req, res) => {
       success: true,
       message: "WhatsApp queued successfully",
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,

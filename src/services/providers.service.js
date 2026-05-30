@@ -39,10 +39,10 @@ export const getProvidersByEnvironmentId =
           is_active: true,
           credentials: true,
           sort_order: true,
-          endpoint: true,
           provider: {
             select: {
               base_endpoint: true,
+              slug: true,
             },
           },
         },
@@ -124,6 +124,7 @@ export const assignProviderToEnvironment = async ({
   credentials,
   endpoint,
   provider_name,
+  provider_slug
 }) => {
 
   const existingCount = await prisma.environmentServiceProvider.count({
@@ -162,6 +163,7 @@ export const assignProviderToEnvironment = async ({
       provider_name,
       is_active: true,
       sort_order: newSortOrder,
+      provider_slug,
     },
   });
   console.log("✅ Created provider:", envProvider.sort_order);

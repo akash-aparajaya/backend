@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 import {smsCron} from  "./workers/cron.js";
+import logger from "./utils/logger.js";
 
 
 // import { createBullBoard } from "@bull-board/api";
@@ -90,9 +91,11 @@ app.use((err, req, res, next) => {
 });
 
 export const initCronJobs = () => {
-  console.log("⏱ Starting all cron jobs...");
+  logger.warn("⏱ Starting all cron jobs..!");
+
   smsCron();
-  console.log("✅ All cron jobs started");
+ 
+  logger.warn("✅ All cron jobs started");
 };
 
 export default app;
