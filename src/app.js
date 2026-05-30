@@ -7,6 +7,8 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
+import {smsCron} from  "./workers/cron.js";
+
 
 // import { createBullBoard } from "@bull-board/api";
 // import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
@@ -86,5 +88,11 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error",
   });
 });
+
+export const initCronJobs = () => {
+  console.log("⏱ Starting all cron jobs...");
+  smsCron();
+  console.log("✅ All cron jobs started");
+};
 
 export default app;

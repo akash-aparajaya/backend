@@ -1,4 +1,4 @@
-import app from "./app.js";
+import app, { initCronJobs } from "./app.js";
 import prisma from "./config/prisma.js";
 import logger from "./utils/logger.js";
 // import { redisConnection } from "./config/redis.js";
@@ -11,6 +11,9 @@ const startServer = async () => {
     await prisma.$connect();
     logger.verbose("💾 Database connected");
 
+    // 👉 START CRON FROM APP
+    initCronJobs();
+
     // // ✅ Redis
     // await redisConnection.ping();
     // logger.verbose("⚡ Redis connected");
@@ -20,7 +23,6 @@ const startServer = async () => {
       logger.verbose(`🚀 Server running on http://localhost:${PORT}`);
       logger.verbose(`⏱ Server started at ${new Date().toISOString()}`);
     });
-
   } catch (error) {
     logger.error("🔴 Failed to start server:", error);
     process.exit(1);
@@ -32,7 +34,7 @@ const shutdown = async () => {
   logger.warn("🛑 Shutting down server...");
   try {
     await prisma.$disconnect();
-    await redisConnection.quit();
+    // await redisConnection.quit();
     logger.warn("🔌 Clean shutdown complete");
     process.exit(0);
   } catch (error) {

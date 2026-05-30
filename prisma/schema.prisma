@@ -48,10 +48,15 @@ model ServiceType {
 
   public_id String @unique @default(cuid())
 
-  name        String  @unique
-  slug        String  @unique
+  slug String @unique
+
+  name String @unique
+
   description String?
-  is_active   Boolean @default(true)
+
+  service_base_endpoint String
+
+  is_active Boolean @default(true)
 
   providers Provider[]
 
@@ -77,13 +82,19 @@ model Provider {
 
   slug String @unique
 
-  required_credential_schema Json
-
   base_endpoint String
+
+  required_credential_schema Json
 
   is_active Boolean @default(true)
 
   environment_service_providers EnvironmentServiceProvider[]
+
+  smsQueues SmsQueue[]
+
+  emailQueues EmailQueue[]
+
+  whatsAppQueues WhatsAppQueue[]
 
   @@map("providers")
 }
@@ -160,12 +171,15 @@ model Project {
 
   updated_at DateTime @updatedAt
 
- is_deleted          Boolean  @default(false)
+  is_deleted Boolean @default(false)
 
   environments Environment[]
 
   api_keys             ApiKeys[]
   environmentEmployees EnvironmentEmployee[]
+  smsQueues            SmsQueue[]
+  emailQueues          EmailQueue[]
+  whatsAppQueues       WhatsAppQueue[]
 
   @@map("projects")
 }
@@ -195,10 +209,11 @@ model Environment {
 
   environment_service_providers EnvironmentServiceProvider[]
 
-  request_logs RequestLog[]
-
   api_keys             ApiKeys[]
   environmentEmployees EnvironmentEmployee[]
+  smsQueues            SmsQueue[]
+  emailQueues          EmailQueue[]
+  whatsAppQueues       WhatsAppQueue[]
 
   @@map("environments")
 }
@@ -226,7 +241,7 @@ model EnvironmentServiceProvider {
 
   provider_name String
 
-  mode String 
+  mode String
 
   credentials Json
 
@@ -240,48 +255,8 @@ model EnvironmentServiceProvider {
 
   updated_at DateTime @updatedAt
 
-  request_logs RequestLog[]
-
   @@unique([environment_id, service_type_id, provider_id, mode, is_active])
   @@map("environment_service_providers")
-}
-
-// =============================================================================
-// REQUEST LOGS
-// =============================================================================
-
-model RequestLog {
-  id Int @id @default(autoincrement())
-
-  public_id String @unique @default(cuid())
-
-  environment_id String
-
-  environment Environment @relation(fields: [environment_id], references: [public_id])
-
-  environment_service_provider_id String
-
-  environment_service_provider EnvironmentServiceProvider @relation(fields: [environment_service_provider_id], references: [public_id])
-
-  service_type String
-
-  provider_slug String
-
-  status RequestStatus @default(PENDING)
-
-  request_data Json?
-
-  response_data Json?
-
-  error String?
-
-  retry_count Int @default(0)
-
-  last_retried_at DateTime?
-
-  created_at DateTime @default(now())
-
-  @@map("request_logs")
 }
 
 // =============================================================================
@@ -347,4 +322,182 @@ model EnvironmentEmployee {
 
   @@unique([environment_id, user_id, project_id])
   @@map("environment_employees")
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  RETRY
+}
+
+enum PrioritySegment {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum MessageType {
+  OTP
+  TRANSACTION
+  MARKETING
+}
+
+model SmsQueue {
+  id        Int    @id @default(autoincrement())
+  public_id String @unique @default(cuid())
+
+  // Context (minimal but enough)
+  project_id     String?
+  environment_id String?
+  provider_id    String?
+  mode           String?
+
+  // Message details
+  type          MessageType
+  recipient     String
+  message       String
+  template_name String?
+
+  // Queue control
+  status   QueueStatus     @default(PENDING)
+  priority PrioritySegment @default(MEDIUM)
+
+  // Idempotency (prevents duplicate requests)
+  idempotency_key String? @unique
+
+  // Retry system
+  attempts     Int @default(0)
+  max_attempts Int @default(3)
+
+  // Scheduling
+  scheduled_at DateTime?
+  processed_at DateTime?
+  sent_at      DateTime?
+
+  // Locking (prevents duplicate processing)
+  locked_at DateTime?
+  locked_by String?
+
+  // Logs
+  request_payload  Json?
+  response_payload Json?
+  error_message    String?
+
+  // Timestamps
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project     Project?     @relation(fields: [project_id], references: [public_id])
+  environment Environment? @relation(fields: [environment_id], references: [public_id])
+  provider    Provider?    @relation(fields: [provider_id], references: [public_id])
+
+  // Indexes (VERY important for workers)
+  @@index([status])
+  @@index([scheduled_at])
+  @@index([locked_at])
+  @@index([project_id])
+  @@index([provider_id])
+  @@index([environment_id])
+}
+
+model EmailQueue {
+  id        Int    @id @default(autoincrement())
+  public_id String @unique @default(cuid())
+
+  project_id     String?
+  environment_id String?
+  provider_id    String?
+  mode           String?
+
+  type          MessageType
+  recipient     String
+  subject       String?
+  message       String
+  template_name String?
+
+  status   QueueStatus     @default(PENDING)
+  priority PrioritySegment @default(MEDIUM)
+
+  idempotency_key String? @unique
+
+  attempts     Int @default(0)
+  max_attempts Int @default(2)
+
+  scheduled_at DateTime?
+  processed_at DateTime?
+  sent_at      DateTime?
+
+  locked_at DateTime?
+  locked_by String?
+
+  request_payload  Json?
+  response_payload Json?
+  error_message    String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // RELATIONS
+  project     Project?     @relation(fields: [project_id], references: [public_id])
+  environment Environment? @relation(fields: [environment_id], references: [public_id])
+  provider    Provider?    @relation(fields: [provider_id], references: [public_id])
+
+  @@index([status])
+  @@index([scheduled_at])
+  @@index([locked_at])
+  @@index([project_id])
+  @@index([provider_id])
+  @@index([environment_id])
+}
+
+model WhatsAppQueue {
+  id        Int    @id @default(autoincrement())
+  public_id String @unique @default(cuid())
+
+  project_id     String?
+  environment_id String?
+  provider_id    String?
+  mode           String?
+
+  type          MessageType
+  recipient     String
+  message       String
+  template_name String?
+
+  status   QueueStatus     @default(PENDING)
+  priority PrioritySegment @default(MEDIUM)
+
+  idempotency_key String? @unique
+
+  attempts     Int @default(0)
+  max_attempts Int @default(2)
+
+  scheduled_at DateTime?
+  processed_at DateTime?
+  sent_at      DateTime?
+
+  locked_at DateTime?
+  locked_by String?
+
+  request_payload  Json?
+  response_payload Json?
+  error_message    String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // RELATIONS
+  project     Project?     @relation(fields: [project_id], references: [public_id])
+  environment Environment? @relation(fields: [environment_id], references: [public_id])
+  provider    Provider?    @relation(fields: [provider_id], references: [public_id])
+
+  @@index([status])
+  @@index([scheduled_at])
+  @@index([locked_at])
+  @@index([project_id])
+  @@index([provider_id])
+  @@index([environment_id])
 }

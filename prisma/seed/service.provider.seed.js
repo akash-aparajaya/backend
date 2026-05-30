@@ -4,20 +4,23 @@
 
 const SERVICE_TYPES = [
   {
+     slug: "sms",
     name: "SMS",
-    slug: "sms",
+    service_base_endpoint: "https://project-name.com/api/services/v1/dispatch/sms",
     description: "SMS messaging providers",
   },
 
   {
+     slug: "email",
     name: "Email",
-    slug: "email",
+    service_base_endpoint: "https://project-name/api/services/v1/dispatch/email",
     description: "Email service providers",
   },
 
   {
+     slug: "whatsapp",
     name: "WhatsApp",
-    slug: "whatsapp",
+    service_base_endpoint: "https://project-name/api/services/v1/dispatch/whatsapp",
     description: "WhatsApp messaging providers",
   },
 ];
@@ -33,13 +36,9 @@ const PROVIDERS = [
 
   {
     service_slug: "sms",
-
     name: "Twilio SMS",
-
     slug: "twilio_sms",
-
-    base_endpoint: "https://api.twilio.com",
-
+    base_endpoint: "https://api.twilio.com/2010-04-01",
     required_credential_schema: [
       {
         key: "account_sid",
@@ -49,7 +48,6 @@ const PROVIDERS = [
         placeholder: "ACxxxxxxxxxxxxxxxx",
         description: "Twilio Account SID",
       },
-
       {
         key: "auth_token",
         label: "Twilio Auth Token",
@@ -59,7 +57,6 @@ const PROVIDERS = [
         placeholder: "Enter Auth Token",
         description: "Twilio Auth Token",
       },
-
       {
         key: "phone_number",
         label: "Twilio Phone Number",
@@ -73,13 +70,9 @@ const PROVIDERS = [
 
   {
     service_slug: "sms",
-
     name: "MSG91",
-
     slug: "msg91",
-
-    base_endpoint: "https://api.msg91.com",
-
+    base_endpoint: "https://api.msg91.com/api/v5",
     required_credential_schema: [
       {
         key: "api_key",
@@ -88,35 +81,32 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "Enter MSG91 API Key",
+        description: "MSG91 Auth Key from dashboard",
       },
-
       {
         key: "sender_id",
         label: "Sender ID",
         type: "text",
         required: true,
         placeholder: "MSGIND",
+        description: "DLT-registered Sender ID (6 characters)",
       },
-
       {
         key: "template_id",
         label: "DLT Template ID",
         type: "text",
         required: true,
         placeholder: "DLT Template ID",
+        description: "TRAI DLT-approved Template ID",
       },
     ],
   },
 
   {
     service_slug: "sms",
-
     name: "Vonage SMS",
-
     slug: "vonage_sms",
-
     base_endpoint: "https://rest.nexmo.com",
-
     required_credential_schema: [
       {
         key: "api_key",
@@ -124,8 +114,8 @@ const PROVIDERS = [
         type: "text",
         required: true,
         placeholder: "Enter API Key",
+        description: "Vonage API Key from dashboard",
       },
-
       {
         key: "api_secret",
         label: "Vonage API Secret",
@@ -133,14 +123,135 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "Enter API Secret",
+        description: "Vonage API Secret from dashboard",
       },
-
       {
         key: "from_number",
         label: "From Number",
         type: "text",
         required: true,
+        placeholder: "CompanyName or +14155238886",
+        description: "Sender phone number or alphanumeric ID",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "TrueDialog SMS",
+    slug: "truedialog_sms",
+    base_endpoint: "https://api.truedialog.com/api/v2",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "TrueDialog API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Key",
+        description: "TrueDialog API Key from dashboard",
+      },
+      {
+        key: "sender_id",
+        label: "Sender ID",
+        type: "text",
+        required: true,
         placeholder: "CompanyName",
+        description: "Registered Sender ID or short code",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "Plivo",
+    slug: "plivo",
+    base_endpoint: "https://api.plivo.com/v1",
+    required_credential_schema: [
+      {
+        key: "auth_id",
+        label: "Auth ID",
+        type: "text",
+        required: true,
+        placeholder: "MAxxxxxxxxxxxxxxxx",
+        description: "Plivo Auth ID from console",
+      },
+      {
+        key: "auth_token",
+        label: "Auth Token",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Auth Token",
+        description: "Plivo Auth Token from console",
+      },
+      {
+        key: "src",
+        label: "Source Number",
+        type: "text",
+        required: true,
+        placeholder: "+14155238886",
+        description: "Plivo phone number to send from (E.164 format)",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "Telnyx SMS",
+    slug: "telnyx_sms",
+    base_endpoint: "https://api.telnyx.com/v2",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "KEY01xxxxxxxx",
+        description: "Telnyx API v2 Key from portal",
+      },
+      {
+        key: "from_number",
+        label: "From Number",
+        type: "text",
+        required: true,
+        placeholder: "+14155238886",
+        description: "Telnyx phone number in E.164 format",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "Sinch SMS",
+    slug: "sinch_sms",
+    base_endpoint: "https://sms.api.sinch.com/xms/v1",
+    required_credential_schema: [
+      {
+        key: "project_id",
+        label: "Project ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Project ID",
+        description: "Sinch Project ID from Customer Dashboard",
+      },
+      {
+        key: "access_key",
+        label: "Access Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Access Key",
+        description: "Sinch Access Key (used as API token)",
+      },
+      {
+        key: "sender_id",
+        label: "Sender ID",
+        type: "text",
+        required: true,
+        placeholder: "+14155238886",
+        description: "Sinch provisioned phone number or Sender ID",
       },
     ],
   },
@@ -151,13 +262,9 @@ const PROVIDERS = [
 
   {
     service_slug: "email",
-
     name: "SMTP",
-
     slug: "smtp",
-
     base_endpoint: "smtp://custom",
-
     required_credential_schema: [
       {
         key: "host",
@@ -165,24 +272,24 @@ const PROVIDERS = [
         type: "text",
         required: true,
         placeholder: "smtp.gmail.com",
+        description: "SMTP server hostname",
       },
-
       {
         key: "port",
         label: "SMTP Port",
         type: "number",
         required: true,
         placeholder: "587",
+        description: "587 for TLS (STARTTLS), 465 for SSL, 25 for plain",
       },
-
       {
         key: "username",
         label: "SMTP Username",
         type: "text",
         required: true,
         placeholder: "Enter Username",
+        description: "Usually your email address",
       },
-
       {
         key: "password",
         label: "SMTP Password",
@@ -190,60 +297,44 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "Enter Password",
+        description: "SMTP password or app-specific password",
       },
-
       {
         key: "encryption",
         label: "Encryption",
         type: "select",
         required: false,
         default_value: "tls",
-
         options: [
-          {
-            label: "TLS",
-            value: "tls",
-          },
-
-          {
-            label: "SSL",
-            value: "ssl",
-          },
-
-          {
-            label: "None",
-            value: "none",
-          },
+          { label: "TLS (STARTTLS — port 587)", value: "tls" },
+          { label: "SSL (port 465)", value: "ssl" },
+          { label: "None (port 25)", value: "none" },
         ],
       },
-
       {
         key: "from_email",
         label: "From Email",
         type: "email",
         required: true,
         placeholder: "noreply@example.com",
+        description: "Sender email address",
       },
-
       {
         key: "from_name",
         label: "From Name",
         type: "text",
         required: false,
         placeholder: "Company Name",
+        description: "Display name shown to recipients",
       },
     ],
   },
 
   {
     service_slug: "email",
-
     name: "SendGrid",
-
     slug: "sendgrid",
-
-    base_endpoint: "https://api.sendgrid.com",
-
+    base_endpoint: "https://api.sendgrid.com/v3",
     required_credential_schema: [
       {
         key: "api_key",
@@ -252,43 +343,40 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "SG.xxxxxxxxx",
+        description: "SendGrid API Key with Mail Send permission",
       },
-
       {
         key: "from_email",
         label: "From Email",
         type: "email",
         required: true,
         placeholder: "noreply@example.com",
+        description: "Verified sender email address",
       },
-
       {
         key: "from_name",
         label: "From Name",
         type: "text",
         required: false,
         placeholder: "Company Name",
+        description: "Display name shown to recipients",
       },
-
       {
         key: "reply_to_email",
         label: "Reply To Email",
         type: "email",
         required: false,
         placeholder: "support@example.com",
+        description: "Optional reply-to address",
       },
     ],
   },
 
   {
     service_slug: "email",
-
     name: "AWS SES",
-
     slug: "aws_ses",
-
-    base_endpoint: "https://email.amazonaws.com",
-
+    base_endpoint: "https://email.{region}.amazonaws.com",
     required_credential_schema: [
       {
         key: "mode",
@@ -296,28 +384,19 @@ const PROVIDERS = [
         type: "select",
         required: true,
         default_value: "api",
-
         options: [
-          {
-            label: "API",
-            value: "api",
-          },
-
-          {
-            label: "SMTP",
-            value: "smtp",
-          },
+          { label: "API (SESv2)", value: "api" },
+          { label: "SMTP", value: "smtp" },
         ],
       },
-
       {
         key: "access_key_id",
         label: "AWS Access Key ID",
         type: "text",
         required: true,
         placeholder: "AKIAxxxxxxxx",
+        description: "IAM user Access Key ID with SES permissions",
       },
-
       {
         key: "secret_access_key",
         label: "AWS Secret Access Key",
@@ -325,35 +404,33 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "Enter Secret Key",
+        description: "IAM user Secret Access Key",
       },
-
       {
         key: "region",
         label: "AWS Region",
         type: "text",
         required: true,
         placeholder: "ap-south-1",
+        description:
+          "AWS region where SES is configured (e.g. us-east-1, ap-south-1)",
       },
-
       {
         key: "from_email",
         label: "From Email",
         type: "email",
         required: true,
         placeholder: "noreply@example.com",
+        description: "SES-verified sender email address",
       },
     ],
   },
 
   {
     service_slug: "email",
-
     name: "Mailgun",
-
     slug: "mailgun",
-
-    base_endpoint: "https://api.mailgun.net",
-
+    base_endpoint: "https://api.mailgun.net/v3",
     required_credential_schema: [
       {
         key: "api_key",
@@ -361,34 +438,33 @@ const PROVIDERS = [
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "key-xxxxxxxxxxxxxxxx",
+        description: "Mailgun Private API Key from dashboard",
       },
-
       {
         key: "domain",
         label: "Mailgun Domain",
         type: "text",
         required: true,
         placeholder: "mg.example.com",
+        description: "Your verified Mailgun sending domain",
       },
-
       {
         key: "from_email",
         label: "From Email",
         type: "email",
         required: true,
+        placeholder: "noreply@mg.example.com",
+        description: "Sender address matching your Mailgun domain",
       },
     ],
   },
 
   {
     service_slug: "email",
-
     name: "Postmark",
-
     slug: "postmark",
-
     base_endpoint: "https://api.postmarkapp.com",
-
     required_credential_schema: [
       {
         key: "server_token",
@@ -396,13 +472,76 @@ const PROVIDERS = [
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        description: "Server API Token from Postmark dashboard",
       },
-
       {
         key: "from_email",
         label: "From Email",
         type: "email",
         required: true,
+        placeholder: "noreply@example.com",
+        description: "Postmark-verified sender signature email",
+      },
+    ],
+  },
+
+  {
+    service_slug: "email",
+    name: "Resend",
+    slug: "resend",
+    base_endpoint: "https://api.resend.com/v1",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "re_xxxxxxxxxxxxxxxx",
+        description: "Resend API Key from dashboard",
+      },
+      {
+        key: "from_email",
+        label: "From Email",
+        type: "email",
+        required: true,
+        placeholder: "noreply@example.com",
+        description: "Verified sender email address",
+      },
+    ],
+  },
+
+  {
+    service_slug: "email",
+    name: "Brevo",
+    slug: "brevo",
+    base_endpoint: "https://api.brevo.com/v3",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "xkeysib-xxxxxxxxxxxxxxxx",
+        description: "Brevo API Key from account settings",
+      },
+      {
+        key: "from_email",
+        label: "From Email",
+        type: "email",
+        required: true,
+        placeholder: "noreply@example.com",
+        description: "Verified sender email address",
+      },
+      {
+        key: "from_name",
+        label: "From Name",
+        type: "text",
+        required: false,
+        placeholder: "Company Name",
+        description: "Display name shown to recipients",
       },
     ],
   },
@@ -413,97 +552,103 @@ const PROVIDERS = [
 
   {
     service_slug: "whatsapp",
-
     name: "Meta Cloud API",
-
     slug: "meta_cloud",
-
-    base_endpoint: "https://graph.facebook.com",
-
+    base_endpoint: "https://graph.facebook.com/v21.0",
     required_credential_schema: [
       {
         key: "phone_number_id",
         label: "Phone Number ID",
         type: "text",
         required: true,
+        placeholder: "Enter Phone Number ID",
+        description: "WhatsApp Business phone number ID from Meta dashboard",
       },
-
       {
         key: "access_token",
         label: "Access Token",
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "Enter Access Token",
+        description: "Permanent or temporary Meta access token",
       },
-
       {
         key: "business_account_id",
         label: "Business Account ID",
         type: "text",
         required: true,
+        placeholder: "Enter WABA ID",
+        description: "WhatsApp Business Account (WABA) ID",
       },
-
       {
         key: "webhook_verify_token",
         label: "Webhook Verify Token",
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "Enter Webhook Verify Token",
+        description: "Custom token used to verify webhook endpoint with Meta",
       },
-
+      {
+        key: "api_version",
+        label: "Graph API Version",
+        type: "text",
+        required: true,
+        default_value: "v21.0",
+        placeholder: "v21.0",
+        description: "Meta Graph API version (current stable: v21.0)",
+      },
       {
         key: "app_id",
         label: "Meta App ID",
         type: "text",
         required: false,
+        placeholder: "Enter Meta App ID",
+        description: "Optional — Meta App ID associated with your WABA",
       },
     ],
   },
 
   {
     service_slug: "whatsapp",
-
     name: "Twilio WhatsApp",
-
     slug: "twilio_whatsapp",
-
-    base_endpoint: "https://api.twilio.com",
-
+    base_endpoint: "https://api.twilio.com/2010-04-01",
     required_credential_schema: [
       {
         key: "account_sid",
         label: "Twilio Account SID",
         type: "text",
         required: true,
+        placeholder: "ACxxxxxxxxxxxxxxxx",
+        description: "Twilio Account SID from console",
       },
-
       {
         key: "auth_token",
         label: "Twilio Auth Token",
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "Enter Auth Token",
+        description: "Twilio Auth Token from console",
       },
-
       {
         key: "phone_number",
         label: "WhatsApp Number",
         type: "text",
         required: true,
         placeholder: "whatsapp:+14155238886",
+        description: "Twilio WhatsApp number with whatsapp: prefix",
       },
     ],
   },
 
   {
     service_slug: "whatsapp",
-
     name: "Gupshup WhatsApp",
-
     slug: "gupshup_whatsapp",
-
-    base_endpoint: "https://api.gupshup.io",
-
+    base_endpoint: "https://api.gupshup.io/sm/api/v1",
     required_credential_schema: [
       {
         key: "api_key",
@@ -511,25 +656,82 @@ const PROVIDERS = [
         type: "password",
         required: true,
         is_secret: true,
+        placeholder: "Enter API Key",
+        description: "Gupshup API Key from developer portal",
       },
-
       {
         key: "app_name",
         label: "App Name",
         type: "text",
         required: true,
+        placeholder: "MyAppName",
+        description: "Gupshup registered app name",
       },
-
       {
         key: "phone_number",
         label: "WhatsApp Number",
         type: "text",
         required: true,
+        placeholder: "+14155238886",
+        description: "Gupshup WhatsApp Business number in E.164 format",
+      },
+    ],
+  },
+
+  {
+    service_slug: "whatsapp",
+    name: "360Dialog",
+    slug: "360dialog",
+    base_endpoint: "https://waba-v2.360dialog.io/v1",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Key",
+        description: "360Dialog API Key from partner hub",
+      },
+    ],
+  },
+
+  {
+    service_slug: "whatsapp",
+    name: "WATI",
+    slug: "wati",
+    base_endpoint: "https://live-server.wati.io/api/v1",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Key",
+        description: "WATI API Key from settings",
+      },
+    ],
+  },
+
+  {
+    service_slug: "whatsapp",
+    name: "Interakt",
+    slug: "interakt",
+    base_endpoint: "https://api.interakt.ai/v1",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Key",
+        description: "Interakt API Key from developer settings",
       },
     ],
   },
 ];
-
 // =============================================================================
 // SEED FUNCTION
 // =============================================================================
@@ -544,32 +746,30 @@ const seedProvider = async (prisma) => {
   // =============================================================================
 
   for (const serviceType of SERVICE_TYPES) {
-    const createdServiceType =
-      await prisma.serviceType.upsert({
-        where: {
-          slug: serviceType.slug,
-        },
+    const createdServiceType = await prisma.serviceType.upsert({
+      where: {
+        slug: serviceType.slug,
+      },
 
-        update: {
-          name: serviceType.name,
-          description: serviceType.description,
-          is_active: true,
-        },
+      update: {
+        name: serviceType.name,
+        description: serviceType.description,
+        service_base_endpoint: serviceType.service_base_endpoint,
+        is_active: true,
+      },
 
-        create: {
-          name: serviceType.name,
-          slug: serviceType.slug,
-          description: serviceType.description,
-          is_active: true,
-        },
-      });
+      create: {
+        name: serviceType.name,
+        slug: serviceType.slug,
+        description: serviceType.description,
+        service_base_endpoint: serviceType.service_base_endpoint,
+        is_active: true,
+      },
+    });
 
-    serviceTypeMap[serviceType.slug] =
-      createdServiceType;
+    serviceTypeMap[serviceType.slug] = createdServiceType;
 
-    console.log(
-      `✅ Service Type Seeded: ${serviceType.name}`
-    );
+    console.log(`✅ Service Type Seeded: ${serviceType.name}`);
   }
 
   // =============================================================================
@@ -577,13 +777,10 @@ const seedProvider = async (prisma) => {
   // =============================================================================
 
   for (const provider of PROVIDERS) {
-    const serviceType =
-      serviceTypeMap[provider.service_slug];
+    const serviceType = serviceTypeMap[provider.service_slug];
 
     if (!serviceType) {
-      console.log(
-        `❌ Service Type Not Found: ${provider.service_slug}`
-      );
+      console.log(`❌ Service Type Not Found: ${provider.service_slug}`);
 
       continue;
     }
@@ -594,46 +791,36 @@ const seedProvider = async (prisma) => {
       },
 
       update: {
-        service_type_id:
-          serviceType.public_id,
+        service_type_id: serviceType.public_id,
 
         name: provider.name,
 
-        base_endpoint:
-          provider.base_endpoint,
+        base_endpoint: provider.base_endpoint,
 
-        required_credential_schema:
-          provider.required_credential_schema,
+        required_credential_schema: provider.required_credential_schema,
 
         is_active: true,
       },
 
       create: {
-        service_type_id:
-          serviceType.public_id,
+        service_type_id: serviceType.public_id,
 
         name: provider.name,
 
         slug: provider.slug,
 
-        base_endpoint:
-          provider.base_endpoint,
+        base_endpoint: provider.base_endpoint,
 
-        required_credential_schema:
-          provider.required_credential_schema,
+        required_credential_schema: provider.required_credential_schema,
 
         is_active: true,
       },
     });
 
-    console.log(
-      `✅ Provider Seeded: ${provider.name}`
-    );
+    console.log(`✅ Provider Seeded: ${provider.name}`);
   }
 
-  console.log(
-    "🎉 Service Provider Seeder Completed"
-  );
+  console.log("🎉 Service Provider Seeder Completed");
 };
 
 export default seedProvider;

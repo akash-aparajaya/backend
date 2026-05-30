@@ -41,9 +41,12 @@ router.patch("/update-provider/:id", updateProviderController);
 router.patch("/delete-provider/:id", deleteProviderController);
 
 /* -------- SMS -------- */
-router.post("/send-sms", validateApiKey, sendSmsController);
+router.post("/send-sms",validateApiKey, sendSmsController);
 
 /* -------- EMAIL -------- */
 router.post("/send-email", validateApiKey, sendEmailController);
+
+// /* -------- WHATSAPP -------- */
+// router.post("/send-whatsapp", validateApiKey, sendWhatsAppController);
 
 export default router;

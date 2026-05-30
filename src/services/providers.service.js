@@ -8,6 +8,7 @@ export const getAllServices = async () => {
       public_id: true,
       name: true,
       slug: true,
+      service_base_endpoint:true,
       is_active: true,
     },
   });

@@ -41,8 +41,10 @@ export const validateApiKey = async (req, res, next) => {
 
     // attach to request
     req.apiKey = apiKey;
+    req.project_id = apiKey.project_id;
     req.environment_id = apiKey.environment_id;
     req.mode = apiKey.mode;
+
 
     next();
   } catch (err) {

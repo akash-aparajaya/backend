@@ -288,6 +288,7 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
                   public_id: true,
                   name: true,
                   description: true,
+                  service_base_endpoint: true,
                 },
               },
             },
@@ -340,6 +341,7 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
           id: service.public_id,
 
           service_name: service.service_type?.name || "Unknown Service",
+          service_endpoint: service.service_type?.service_base_endpoint || "",
 
           provider_name: service.provider?.name || "",
 
@@ -360,7 +362,7 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
       const credentialData = {
         ...(service.credentials || {}),
 
-        endpoint: service.endpoint || service.provider?.base_endpoint || "",
+        // endpoint: service.endpoint || service.provider?.base_endpoint || "",
 
         provider_name: service.provider?.name || "",
 
