@@ -54,7 +54,7 @@ model ServiceType {
 
   description String?
 
-  service_base_endpoint String
+  service_base_endpoint String?
 
   is_active Boolean @default(true)
 
@@ -249,7 +249,7 @@ model EnvironmentServiceProvider {
 
   is_active Boolean @default(true)
 
-  sort_order Int @default(0)
+  sort_order Int @default(1)
 
   created_at DateTime @default(now())
 

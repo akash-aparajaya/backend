@@ -8,7 +8,7 @@ export const getAllServices = async () => {
       public_id: true,
       name: true,
       slug: true,
-      service_base_endpoint:true,
+      service_base_endpoint: true,
       is_active: true,
     },
   });
@@ -39,7 +39,7 @@ export const getProvidersByEnvironmentId =
           is_active: true,
           credentials: true,
           sort_order: true,
-
+          endpoint: true,
           provider: {
             select: {
               base_endpoint: true,
@@ -52,7 +52,7 @@ export const getProvidersByEnvironmentId =
       providers.map((provider) => ({
         ...provider,
 
-        endpoint:
+        endpoint: provider.endpoint ||
           provider.provider?.base_endpoint || "",
       }));
 
@@ -125,6 +125,18 @@ export const assignProviderToEnvironment = async ({
   endpoint,
   provider_name,
 }) => {
+
+  const existingCount = await prisma.environmentServiceProvider.count({
+    where: {
+      environment_id,
+      service_type_id,
+      mode,
+      is_active: true,
+    },
+  });
+
+  const newSortOrder = existingCount + 1;
+  console.log("🔢 New sort_order:", newSortOrder);
   const envProvider = await prisma.environmentServiceProvider.upsert({
     where: {
       environment_id_service_type_id_provider_id_mode_is_active: {
@@ -149,9 +161,10 @@ export const assignProviderToEnvironment = async ({
       mode,
       provider_name,
       is_active: true,
+      sort_order: newSortOrder,
     },
   });
-
+  console.log("✅ Created provider:", envProvider.sort_order);
   return envProvider;
 };
 

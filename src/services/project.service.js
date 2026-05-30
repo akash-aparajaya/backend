@@ -535,7 +535,7 @@ export const reorderProvidersService =
           },
 
           data: {
-            sort_order: index,
+            sort_order: index + 1,
           },
         });
       });
