@@ -25,7 +25,7 @@ export const getProvidersByEnvironmentId =
         where: {
           environment_id: environmentId,
           service_type_id: serviceId,
-          is_active: true,
+          // is_active: true,
         },
 
         orderBy: {
@@ -37,6 +37,8 @@ export const getProvidersByEnvironmentId =
           provider_name: true,
           mode: true,
           is_active: true,
+          last_error_message: true,
+          last_failed_at: true,
           credentials: true,
           sort_order: true,
           provider: {

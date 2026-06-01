@@ -4,45 +4,72 @@ import logger from "../utils/logger.js";
 
 const WORKER_ID = `sms-worker-${process.pid}`;
 
-// run every 5 seconds
 export const smsWorker = async () => {
   try {
-    // 1. FIND & LOCK JOB ATOMICALLY IN TRANSACTION
-    const job = await prisma.$transaction(async (tx) => {
-      // 1.1. GET PENDING JOB
+    // =====================================================
+    // 1. FIND & LOCK NEXT PENDING SMS JOB
+    // =====================================================
 
+    const job = await prisma.$transaction(async (tx) => {
       const found = await tx.smsQueue.findFirst({
         where: {
           status: "PENDING",
+
           OR: [
-            { locked_at: null },
-            { locked_at: { lt: new Date(Date.now() - 60 * 1000) } },
+            {
+              locked_at: null,
+            },
+            {
+              locked_at: {
+                lt: new Date(Date.now() - 60 * 1000), // stale lock recovery
+              },
+            },
           ],
         },
+
         select: {
           id: true,
           status: true,
+
           priority: true,
           priority_value: true,
+
           recipient: true,
           message: true,
+
           project_id: true,
           environment_id: true,
+
           mode: true,
+
           attempts: true,
           max_attempts: true,
         },
-        orderBy: [{ priority_value: "desc" }, { created_at: "asc" }],
+
+        orderBy: [
+          {
+            priority_value: "desc",
+          },
+          {
+            created_at: "asc",
+          },
+        ],
       });
 
-      if (!found) return null;
+      if (!found) {
+        return null;
+      }
 
-      // 2. ATOMIC LOCK — prevents double-claiming
+      // =====================================================
+      // 2. LOCK JOB (PREVENT DOUBLE PROCESSING)
+      // =====================================================
+
       const locked = await tx.smsQueue.updateMany({
         where: {
           id: found.id,
           status: "PENDING",
         },
+
         data: {
           status: "PROCESSING",
           locked_at: new Date(),
@@ -50,120 +77,214 @@ export const smsWorker = async () => {
         },
       });
 
-      if (locked.count === 0) return null;
+      if (locked.count === 0) {
+        return null;
+      }
 
       return found;
     });
 
+    // =====================================================
+    // NO JOBS AVAILABLE
+    // =====================================================
+
     if (!job) {
-      console.log("No pending jobs");
+      //logger.info("No pending SMS jobs");
       return;
     }
 
-    console.log("Processing job", job.id);
+    logger.info(`Processing SMS Job: ${job.id}`);
 
-    // 3. GET ALL ACTIVE PROVIDERS IN SORT ORDER (for fallback)
+    // =====================================================
+    // 3. GET SMS SERVICE TYPE
+    // =====================================================
 
-    const getServiceTypeID = await prisma.ServiceType.findFirst({
+    const serviceType = await prisma.serviceType.findFirst({
       where: {
         slug: "sms",
         name: "SMS",
+        is_active: true,
       },
+
       select: {
         public_id: true,
       },
     });
 
+    if (!serviceType) {
+      throw new Error("SMS Service Type not found");
+    }
+
+    // =====================================================
+    // 4. GET ACTIVE PROVIDERS
+    // SORT ORDER = FAILOVER PRIORITY
+    // =====================================================
+
     const providers = await prisma.environmentServiceProvider.findMany({
       where: {
         environment_id: job.environment_id,
-        service_type_id: getServiceTypeID.public_id,
+        service_type_id: serviceType.public_id,
         mode: job.mode,
         is_active: true,
       },
+
       select: {
         id: true,
+        public_id: true,
         provider_id: true,
         provider_slug: true,
-        mode: true,
         credentials: true,
         sort_order: true,
       },
-      orderBy: [{ sort_order: "asc" }],
+
+      orderBy: [
+        {
+          sort_order: "asc",
+        },
+      ],
     });
-    console.log(providers, "providers");
-    // 4. IF NO ACTIVE PROVIDERS — FAIL ALL JOBS WITH SAME ENV + PROJECT + MODE
+
+    logger.info("SMS Providers:", providers);
+
+    // =====================================================
+    // 5. NO PROVIDERS FOUND
+    // FAIL ALL RELATED JOBS
+    // =====================================================
+
     if (!providers.length) {
       await prisma.smsQueue.updateMany({
         where: {
           environment_id: job.environment_id,
           project_id: job.project_id,
           mode: job.mode,
-          status: "PROCESSING" || "PENDING", // only touch PENDING jobs
+
+          status: {
+            in: ["PENDING", "PROCESSING"],
+          },
         },
+
         data: {
           status: "FAILED",
-          error_message: "No active provider found",
+          error_message: "No active SMS provider found",
+
           locked_at: null,
           locked_by: null,
+
+          processed_at: new Date(),
         },
       });
+
       return;
     }
 
-    // 5. TRY EACH PROVIDER IN SORT ORDER UNTIL ONE SUCCEEDS
+    // =====================================================
+    // 6. TRY PROVIDERS IN SORT ORDER
+    // =====================================================
+
     let sent = false;
 
     for (const provider of providers) {
       try {
+        logger.info(
+          `Trying Provider: ${provider.provider_slug} | Order: ${provider.sort_order}`,
+        );
+
         const result = await sendSmsProvider({
           to: job.recipient,
           message: job.message,
+
           provider: {
-            credentials: provider.credentials,
             provider_slug: provider.provider_slug,
+            credentials: provider.credentials,
           },
         });
+
+        // =====================================================
+        // SUCCESS
+        // =====================================================
 
         await prisma.smsQueue.update({
-          where: { id: job.id },
+          where: {
+            id: job.id,
+          },
+
           data: {
             status: "SENT",
+
             sent_at: new Date(),
             processed_at: new Date(),
+
             response_payload: result,
-            provider_id: provider.id, // track which provider actually sent
+
+            provider_id: provider.provider_id,
+
             locked_at: null,
             locked_by: null,
-            provider_id: provider.provider_id,
           },
         });
 
+        logger.info(`SMS sent successfully using ${provider.provider_slug}`);
+
         sent = true;
-        break; // success — stop trying other providers
+
+        break;
       } catch (providerError) {
-        // warn and continue to next provider in sort order
-        console.warn(`Provider ${provider.id} failed:`, providerError.message);
+        logger.warn(
+          `Provider ${provider.provider_slug} failed: ${providerError.message}`,
+        );
+        await prisma.environmentServiceProvider.update({
+          where: {
+            id: provider.id,
+            public_id: provider.public_id,
+          },
+          data: {
+            last_error_message: providerError.message,
+            last_failed_at: new Date(),
+            is_active: false, // deactivate provider after failure
+          },
+        });
+
+        // continue to next provider
       }
     }
 
-    // 6. ALL PROVIDERS FAILED — RETRY OR MARK FAILED
+    // =====================================================
+    // 7. ALL PROVIDERS FAILED
+    // =====================================================
+
     if (!sent) {
-      const shouldRetry = job.attempts + 1 < job.max_attempts;
+      const nextAttempt = job.attempts + 1;
+
+      const shouldRetry = nextAttempt < job.max_attempts;
 
       await prisma.smsQueue.update({
-        where: { id: job.id },
+        where: {
+          id: job.id,
+        },
+
         data: {
-          attempts: job.attempts + 1,
+          attempts: nextAttempt,
+
           status: shouldRetry ? "PENDING" : "FAILED",
-          error_message: "All providers failed",
+
+          error_message: "All SMS providers failed",
+
+          processed_at: shouldRetry ? null : new Date(),
+
           locked_at: null,
           locked_by: null,
         },
       });
+
+      logger.info(
+        shouldRetry
+          ? `SMS Job ${job.id} returned to queue for retry`
+          : `SMS Job ${job.id} marked FAILED`,
+      );
     }
   } catch (error) {
-    console.error("SMS Worker Error:", error.message);
+    console.error("SMS Worker Error:", error);
+    logger.error(`SMS Worker Error: ${error.message}`);
   }
 
   logger.verbose("SMS Worker is running...");

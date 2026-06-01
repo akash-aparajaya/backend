@@ -223,8 +223,8 @@ export const removeEnvironmentFromUser = async (
   });
 };
 
+/*-------- get user assigned projects and environments -------- */
 export const userAssignedProjectsEnvironments = async (user_id) => {
-
   const assignedEnvironments = await prisma.environmentEmployee.findMany({
     where: {
       user_id,
@@ -245,10 +245,6 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
           public_id: true,
           environment_name: true,
 
-          // =====================================
-          // API KEYS
-          // =====================================
-
           api_keys: {
             where: {
               is_active: true,
@@ -265,20 +261,19 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
             },
           },
 
-          // =====================================
-          // SERVICES
-          // =====================================
-
           environment_service_providers: {
             where: {
               is_active: true,
             },
-
+            orderBy: {
+              sort_order: "asc",
+            },
             include: {
               provider: {
                 select: {
                   public_id: true,
                   name: true,
+                  slug: true,
                   base_endpoint: true,
                 },
               },
@@ -298,71 +293,48 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
     },
   });
 
-  // =====================================
-  // PROJECT MAP
-  // =====================================
-
   const projectMap = new Map();
 
   assignedEnvironments.forEach(({ project, environment }) => {
     if (!project || !environment) return;
 
-    // =====================================
-    // CREATE PROJECT
-    // =====================================
-
     if (!projectMap.has(project.public_id)) {
       projectMap.set(project.public_id, {
         public_id: project.public_id,
-
         project_name: project.project_name,
-
         project_description: project.project_description,
-
         environments: [],
       });
     }
 
-    // =====================================
-    // SERVICES MAP
-    // =====================================
+    // ==================================================
+    // GROUP BY SERVICE TYPE (EMAIL, SMS, WHATSAPP)
+    // ==================================================
 
     const serviceMap = new Map();
 
     (environment.environment_service_providers || []).forEach((service) => {
-      const providerKey = `${service.provider_id}_${service.service_type_id}`;
+      const serviceKey = service.service_type_id;
 
-      // =====================================
-      // CREATE SERVICE
-      // =====================================
-
-      if (!serviceMap.has(providerKey)) {
-        serviceMap.set(providerKey, {
-          id: service.public_id,
+      if (!serviceMap.has(serviceKey)) {
+        serviceMap.set(serviceKey, {
+          id: service.service_type?.public_id,
 
           service_name: service.service_type?.name || "Unknown Service",
-          service_endpoint: service.service_type?.service_base_endpoint || "",
 
-          provider_name: service.provider?.name || "",
+          service_endpoint: service.service_type?.service_base_endpoint || "",
 
           service_description: service.service_type?.description || "",
 
           sandbox: [],
-
           live: [],
         });
       }
 
-      const serviceItem = serviceMap.get(providerKey);
-
-      // =====================================
-      // CREDENTIAL DATA
-      // =====================================
+      const serviceItem = serviceMap.get(serviceKey);
 
       const credentialData = {
         ...(service.credentials || {}),
-
-        // endpoint: service.endpoint || service.provider?.base_endpoint || "",
 
         provider_name: service.provider?.name || "",
 
@@ -370,10 +342,6 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
 
         service_description: service.service_type?.description || "",
       };
-
-      // =====================================
-      // MODE
-      // =====================================
 
       const mode = (service.mode || "").toLowerCase();
 
@@ -386,9 +354,9 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
       }
     });
 
-    // =====================================
+    // ==================================================
     // FORMAT API KEYS
-    // =====================================
+    // ==================================================
 
     const formattedApiKeys = (environment.api_keys || []).map((key) => {
       const currentDate = new Date();
@@ -431,10 +399,6 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
       };
     });
 
-    // =====================================
-    // ENVIRONMENT
-    // =====================================
-
     const formattedEnvironment = {
       public_id: environment.public_id,
 
@@ -445,16 +409,8 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
       services: Array.from(serviceMap.values()),
     };
 
-    // =====================================
-    // PUSH ENVIRONMENT
-    // =====================================
-
     projectMap.get(project.public_id).environments.push(formattedEnvironment);
   });
-
-  // =====================================
-  // RETURN
-  // =====================================
 
   return Array.from(projectMap.values());
 };

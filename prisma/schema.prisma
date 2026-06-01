@@ -251,6 +251,10 @@ model EnvironmentServiceProvider {
 
   sort_order Int @default(1)
 
+  last_failed_at DateTime?
+  
+  last_error_message String?
+
   created_at DateTime @default(now())
 
   updated_at DateTime @updatedAt
@@ -421,6 +425,7 @@ model EmailQueue {
 
   status   QueueStatus     @default(PENDING)
   priority PrioritySegment @default(MEDIUM)
+  priority_value Int             @default(2)
 
   idempotency_key String? @unique
 
@@ -470,7 +475,7 @@ model WhatsAppQueue {
 
   status   QueueStatus     @default(PENDING)
   priority PrioritySegment @default(MEDIUM)
-
+  priority_value Int             @default(2)
   idempotency_key String? @unique
 
   attempts     Int @default(0)

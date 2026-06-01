@@ -7,12 +7,14 @@ export const createSmsQueueService = async (data) => {
 };
 
 export const createEmailQueueService = async (data) => {
+  console.log("Creating email queue with data:", data);
   return prisma.emailQueue.create({
     data,
   });
 };
 
 export const createWhatsappQueueService = async (data) => {
+  console.log("Creating WhatsApp queue with data:", data);
   return prisma.whatsappQueue.create({
     data,
   });

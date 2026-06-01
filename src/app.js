@@ -7,7 +7,7 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
-import {smsCron} from  "./workers/cron.js";
+import {smsCron, emailCron} from  "./workers/cron.js";
 import logger from "./utils/logger.js";
 
 
@@ -94,6 +94,9 @@ export const initCronJobs = () => {
   logger.warn("⏱ Starting all cron jobs..!");
 
   smsCron();
+  emailCron();
+  // whatsappCron();
+  // cleanupCron();
  
   logger.warn("✅ All cron jobs started");
 };
