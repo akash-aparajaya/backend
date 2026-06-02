@@ -10,9 +10,10 @@ export const createUser = async (
   is_active,
 ) => {
   const hashedPassword = await bcrypt.hash(password, 12);
-  const isEmailExists = await prisma.user.findUnique({
+  const isEmailExists = await prisma.user.findFirst({
     where: {
       email: email,
+      is_deleted: false,
     },
   });
 

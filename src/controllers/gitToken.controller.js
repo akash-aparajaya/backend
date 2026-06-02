@@ -32,7 +32,13 @@ export const regenerateApiKeyController = async (req, res) => {
   try {
     const apiKeyId = req.params.id;
 
-    const apiKey = await regenerateApiKeyService(apiKeyId);
+    const { note, expires_in_days } = req.body;
+
+    const apiKey = await regenerateApiKeyService(
+      apiKeyId,
+      note,
+      expires_in_days
+    );
 
     return successResponse(
       res,

@@ -50,12 +50,16 @@ export const getProvidersByEnvironmentId =
         },
       });
 
+    const service = await prisma.serviceType.findFirst({
+      where: { public_id: serviceId },
+      select: { service_base_endpoint: true },
+    });
+
     const formattedProviders =
       providers.map((provider) => ({
         ...provider,
 
-        endpoint: provider.endpoint ||
-          provider.provider?.base_endpoint || "",
+        endpoint: service?.service_base_endpoint || "",
       }));
 
     const result = {
@@ -67,7 +71,7 @@ export const getProvidersByEnvironmentId =
 
     formattedProviders.forEach((provider) => {
 
-      if (provider.mode === "live") {
+      if (provider.mode === "LIVE") {
 
         result.live.push(provider);
 
