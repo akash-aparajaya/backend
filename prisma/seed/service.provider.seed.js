@@ -26,6 +26,22 @@ const SERVICE_TYPES = [
       "https://project-name/api/services/v1/dispatch/whatsapp",
     description: "WhatsApp messaging providers",
   },
+
+  {
+    slug: "ibv",
+    name: "IBV",
+    service_base_endpoint:
+      "https://project-name.com/api/services/v1/dispatch/ibv",
+    description: "Bank account verification and open banking providers",
+  },
+
+  {
+    slug: "credit_score",
+    name: "Credit Score",
+    service_base_endpoint:
+      "https://project-name.com/api/services/v1/dispatch/credit-score",
+    description: "Credit bureau and credit scoring providers",
+  },
 ];
 
 // =============================================================================
@@ -73,40 +89,6 @@ const PROVIDERS = [
 
   {
     service_slug: "sms",
-    name: "MSG91",
-    slug: "msg91",
-    base_endpoint: "https://api.msg91.com/api/v5",
-    required_credential_schema: [
-      {
-        key: "api_key",
-        label: "MSG91 API Key",
-        type: "password",
-        required: true,
-        is_secret: true,
-        placeholder: "Enter MSG91 API Key",
-        description: "MSG91 Auth Key from dashboard",
-      },
-      {
-        key: "sender_id",
-        label: "Sender ID",
-        type: "text",
-        required: true,
-        placeholder: "Sender ID (6 characters)",
-        description: "DLT-registered Sender ID (6 characters)",
-      },
-      {
-        key: "template_id",
-        label: "DLT Template ID",
-        type: "text",
-        required: true,
-        placeholder: "DLT Template ID",
-        description: "TRAI DLT-approved Template ID",
-      },
-    ],
-  },
-
-  {
-    service_slug: "sms",
     name: "Vonage SMS",
     slug: "vonage_sms",
     base_endpoint: "https://rest.nexmo.com",
@@ -141,26 +123,94 @@ const PROVIDERS = [
 
   {
     service_slug: "sms",
-    name: "TrueDialog SMS",
-    slug: "truedialog_sms",
-    base_endpoint: "https://api.truedialog.com/api/v2",
+    name: "Infobip",
+    slug: "infobip",
+    base_endpoint: "https://api.infobip.com",
     required_credential_schema: [
       {
+        key: "base_url",
+        label: "Base URL",
+        type: "text",
+        required: true,
+        placeholder: "https://xxxx.api.infobip.com",
+        description: "Infobip API base URL provided by Infobip",
+      },
+      {
         key: "api_key",
-        label: "TrueDialog API Key",
+        label: "API Key",
         type: "password",
         required: true,
         is_secret: true,
-        placeholder: "Enter API Key",
-        description: "TrueDialog API Key from dashboard",
+        placeholder: "Enter Infobip API Key",
+        description: "Infobip API authentication key",
       },
       {
         key: "sender_id",
         label: "Sender ID",
         type: "text",
         required: true,
-        placeholder: "Registered Sender ID",
-        description: "Registered Sender ID or short code",
+        placeholder: "MyCompany",
+        description: "SMS sender name",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "Sinch SMS",
+    slug: "sinch_sms",
+    base_endpoint: "https://sms.api.sinch.com/xms/v1",
+    required_credential_schema: [
+      {
+        key: "project_id",
+        label: "Project ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Project ID",
+        description: "Sinch Project ID from Customer Dashboard",
+      },
+      {
+        key: "access_key",
+        label: "Access Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Access Key",
+        description: "Sinch Access Key (used as API token)",
+      },
+      {
+        key: "sender_id",
+        label: "Sender ID",
+        type: "text",
+        required: true,
+        placeholder: "+14155238886",
+        description: "Sinch provisioned phone number or Sender ID",
+      },
+    ],
+  },
+
+  {
+    service_slug: "sms",
+    name: "Bird",
+    slug: "bird",
+    base_endpoint: "https://api.bird.com",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Bird API Key",
+        description: "Bird API authentication key",
+      },
+      {
+        key: "sender_id",
+        label: "Sender ID",
+        type: "text",
+        required: true,
+        placeholder: "MyCompany",
+        description: "SMS sender name or originator",
       },
     ],
   },
@@ -201,60 +251,26 @@ const PROVIDERS = [
 
   {
     service_slug: "sms",
-    name: "Telnyx SMS",
-    slug: "telnyx_sms",
-    base_endpoint: "https://api.telnyx.com/v2",
+    name: "TrueDialog SMS",
+    slug: "truedialog_sms",
+    base_endpoint: "https://api.truedialog.com/api/v2",
     required_credential_schema: [
       {
         key: "api_key",
-        label: "API Key",
+        label: "TrueDialog API Key",
         type: "password",
         required: true,
         is_secret: true,
-        placeholder: "KEY01xxxxxxxx",
-        description: "Telnyx API v2 Key from portal",
-      },
-      {
-        key: "from_number",
-        label: "From Number",
-        type: "text",
-        required: true,
-        placeholder: "+14155238886",
-        description: "Telnyx phone number in E.164 format",
-      },
-    ],
-  },
-
-  {
-    service_slug: "sms",
-    name: "Sinch SMS",
-    slug: "sinch_sms",
-    base_endpoint: "https://sms.api.sinch.com/xms/v1",
-    required_credential_schema: [
-      {
-        key: "project_id",
-        label: "Project ID",
-        type: "text",
-        required: true,
-        placeholder: "Enter Project ID",
-        description: "Sinch Project ID from Customer Dashboard",
-      },
-      {
-        key: "access_key",
-        label: "Access Key",
-        type: "password",
-        required: true,
-        is_secret: true,
-        placeholder: "Enter Access Key",
-        description: "Sinch Access Key (used as API token)",
+        placeholder: "Enter API Key",
+        description: "TrueDialog API Key from dashboard",
       },
       {
         key: "sender_id",
         label: "Sender ID",
         type: "text",
         required: true,
-        placeholder: "+14155238886",
-        description: "Sinch provisioned phone number or Sender ID",
+        placeholder: "Registered Sender ID",
+        description: "Registered Sender ID or short code",
       },
     ],
   },
@@ -444,9 +460,9 @@ const PROVIDERS = [
 
   {
     service_slug: "email",
-    name: "Resend",
-    slug: "resend",
-    base_endpoint: "https://api.resend.com/v1",
+    name: "Mailchimp Transactional (Mandrill)",
+    slug: "mailchimp_transactional",
+    base_endpoint: "https://mandrillapp.com/api/1.0",
     required_credential_schema: [
       {
         key: "api_key",
@@ -454,8 +470,8 @@ const PROVIDERS = [
         type: "password",
         required: true,
         is_secret: true,
-        placeholder: "re_xxxxxxxxxxxxxxxx",
-        description: "Resend API Key from dashboard",
+        placeholder: "Enter Mandrill API Key",
+        description: "Mailchimp Transactional API Key",
       },
       {
         key: "from_email",
@@ -464,6 +480,14 @@ const PROVIDERS = [
         required: true,
         placeholder: "noreply@example.com",
         description: "Verified sender email address",
+      },
+      {
+        key: "from_name",
+        label: "From Name",
+        type: "text",
+        required: false,
+        placeholder: "My Application",
+        description: "Sender display name",
       },
     ],
   },
@@ -482,6 +506,32 @@ const PROVIDERS = [
         is_secret: true,
         placeholder: "xkeysib-xxxxxxxxxxxxxxxx",
         description: "Brevo API Key from account settings",
+      },
+      {
+        key: "from_email",
+        label: "From Email",
+        type: "email",
+        required: true,
+        placeholder: "noreply@example.com",
+        description: "Verified sender email address",
+      },
+    ],
+  },
+
+  {
+    service_slug: "email",
+    name: "Resend",
+    slug: "resend",
+    base_endpoint: "https://api.resend.com/v1",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "re_xxxxxxxxxxxxxxxx",
+        description: "Resend API Key from dashboard",
       },
       {
         key: "from_email",
@@ -560,26 +610,78 @@ const PROVIDERS = [
 
   {
     service_slug: "whatsapp",
-    name: "Gupshup WhatsApp",
-    slug: "gupshup_whatsapp",
-    base_endpoint: "https://api.gupshup.io/sm/api/v1",
+    name: "Infobip WhatsApp",
+    slug: "infobip_whatsapp",
+    base_endpoint: "https://api.infobip.com",
     required_credential_schema: [
       {
+        key: "base_url",
+        label: "Base URL",
+        type: "text",
+        required: true,
+        placeholder: "https://xxxx.api.infobip.com",
+        description: "Infobip API base URL",
+      },
+      {
         key: "api_key",
-        label: "Gupshup API Key",
+        label: "API Key",
         type: "password",
         required: true,
         is_secret: true,
         placeholder: "Enter API Key",
-        description: "Gupshup API Key from developer portal",
+        description: "Infobip API Key",
       },
+    ],
+  },
+
+  {
+    service_slug: "whatsapp",
+    name: "Vonage WhatsApp",
+    slug: "vonage_whatsapp",
+    base_endpoint: "https://messages-sandbox.nexmo.com",
+    required_credential_schema: [
       {
-        key: "app_name",
-        label: "App Name",
+        key: "api_key",
+        label: "API Key",
         type: "text",
         required: true,
-        placeholder: "MyAppName",
-        description: "Gupshup registered app name",
+        placeholder: "Enter API Key",
+        description: "Vonage API Key",
+      },
+      {
+        key: "api_secret",
+        label: "API Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Secret",
+        description: "Vonage API Secret",
+      },
+    ],
+  },
+
+  {
+    service_slug: "whatsapp",
+    name: "Sinch WhatsApp",
+    slug: "sinch_whatsapp",
+    base_endpoint: "https://us.conversation.api.sinch.com",
+    required_credential_schema: [
+      {
+        key: "project_id",
+        label: "Project ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Project ID",
+        description: "Sinch Conversation API Project ID",
+      },
+      {
+        key: "access_key",
+        label: "Access Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Access Key",
+        description: "Sinch Access Key",
       },
     ],
   },
@@ -602,29 +704,101 @@ const PROVIDERS = [
     ],
   },
 
+  // =============================================================================
+  // IBV PROVIDERS
+  // =============================================================================
+
   {
-    service_slug: "whatsapp",
-    name: "WATI",
-    slug: "wati",
-    base_endpoint: "https://live-server.wati.io/api/v1",
+    service_slug: "ibv",
+    name: "Plaid",
+    slug: "plaid",
+    base_endpoint: "https://production.plaid.com",
     required_credential_schema: [
       {
-        key: "api_key",
-        label: "API Key",
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "Plaid Client ID",
+      },
+      {
+        key: "secret",
+        label: "Secret",
         type: "password",
         required: true,
         is_secret: true,
-        placeholder: "Enter API Key",
-        description: "WATI API Key from settings",
+        placeholder: "Enter Secret",
+        description: "Plaid Secret Key",
       },
     ],
   },
 
   {
-    service_slug: "whatsapp",
-    name: "Interakt",
-    slug: "interakt",
-    base_endpoint: "https://api.interakt.ai/v1",
+    service_slug: "ibv",
+    name: "MX",
+    slug: "mx",
+    base_endpoint: "https://int-api.mx.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "MX Client ID",
+      },
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Key",
+        description: "MX API Key",
+      },
+    ],
+  },
+
+  {
+    service_slug: "ibv",
+    name: "Yodlee",
+    slug: "yodlee",
+    base_endpoint: "https://api.yodlee.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "Yodlee Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "Yodlee Client Secret",
+      },
+      {
+        key: "admin_login_name",
+        label: "Admin Login Name",
+        type: "text",
+        required: true,
+        placeholder: "admin_user",
+        description: "Yodlee Admin Login Name",
+      },
+    ],
+  },
+
+  {
+    service_slug: "ibv",
+    name: "Chirp",
+    slug: "chirp",
+    base_endpoint: "https://chirp.digital",
     required_credential_schema: [
       {
         key: "api_key",
@@ -633,7 +807,119 @@ const PROVIDERS = [
         required: true,
         is_secret: true,
         placeholder: "Enter API Key",
-        description: "Interakt API Key from developer settings",
+        description: "Chirp API Key from Chirp Portal",
+      },
+    ],
+  },
+
+  // =============================================================================
+  // credit score providers
+  // =============================================================================
+
+  {
+    service_slug: "credit_score",
+    name: "Decentro",
+    slug: "decentro",
+    display_order: 1,
+    base_endpoint: "https://in.decentro.tech",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "Decentro Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "Decentro Client Secret",
+      },
+    ],
+  },
+
+  {
+    service_slug: "credit_score",
+    name: "TransUnion",
+    slug: "transunion",
+    display_order: 2,
+    base_endpoint: "https://api.transunion.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "TransUnion Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "TransUnion Client Secret",
+      },
+    ],
+  },
+
+  {
+    service_slug: "credit_score",
+    name: "Experian",
+    slug: "experian",
+    display_order: 3,
+    base_endpoint: "https://api.experian.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "Experian Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "Experian Client Secret",
+      },
+    ],
+  },
+
+  {
+    service_slug: "credit_score",
+    name: "Equifax",
+    slug: "equifax",
+    display_order: 4,
+    base_endpoint: "https://api.equifax.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "Equifax Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "Equifax Client Secret",
       },
     ],
   },
