@@ -192,6 +192,10 @@ export const updateProviderInEnvironment = async ({
 
       ...(credentials && {
         credentials,
+
+        // CLEAR OLD ERROR STATE
+        last_error_message: null,
+        last_failed_at: null,
       }),
 
       ...(typeof is_active === "boolean" && {
