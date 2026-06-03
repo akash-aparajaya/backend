@@ -177,11 +177,30 @@ export const assignProviderToEnvironment = async ({
 };
 
 /* -------- update provider -------- */
-export const updateProviderInEnvironment = async ({ id, credentials }) => {
+export const updateProviderInEnvironment = async ({
+  id,
+  credentials,
+  is_active,
+}) => {
+
   return await prisma.environmentServiceProvider.update({
-    where: { public_id: id },
-    data: { credentials },
+    where: {
+      public_id: id,
+    },
+
+    data: {
+
+      ...(credentials && {
+        credentials,
+      }),
+
+      ...(typeof is_active === "boolean" && {
+        is_active,
+      }),
+
+    },
   });
+
 };
 
 //* -------- delete provider -------- */

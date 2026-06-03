@@ -79,14 +79,34 @@ export const createProviderController = async (req, res) => {
 /* -------- update provider -------- */
 export const updateProviderController = async (req, res) => {
   try {
-    const { id, credentials } = req.body;
-    const provider = await providersService.updateProviderInEnvironment({
+
+    const {
       id,
       credentials,
-    });
-    return successResponse(res, provider, "Provider updated successfully");
+      is_active,
+    } = req.body;
+
+    const provider =
+      await providersService.updateProviderInEnvironment({
+        id,
+        credentials,
+        is_active,
+      });
+
+    return successResponse(
+      res,
+      provider,
+      "Provider updated successfully"
+    );
+
   } catch (error) {
-    return errorResponse(res, "Failed to update provider", error.message);
+
+    return errorResponse(
+      res,
+      "Failed to update provider",
+      error.message
+    );
+
   }
 };
 
@@ -154,7 +174,7 @@ export const sendSmsController = async (req, res) => {
         request_payload: data,
         priority: data.priority,
         priority_value: PRIORITY_MAP[data.priority],
-       scheduled_at: new Date().toISOString(),
+        scheduled_at: new Date().toISOString(),
       });
 
       return res.status(201).json({
