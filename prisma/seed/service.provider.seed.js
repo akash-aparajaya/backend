@@ -9,6 +9,7 @@ const SERVICE_TYPES = [
     service_base_endpoint:
       "https://project-name.com/api/services/v1/dispatch/sms",
     description: "SMS messaging providers",
+    is_failover: true,
   },
 
   {
@@ -17,6 +18,7 @@ const SERVICE_TYPES = [
     service_base_endpoint:
       "https://project-name/api/services/v1/dispatch/email",
     description: "Email service providers",
+    is_failover: true,
   },
 
   {
@@ -25,6 +27,7 @@ const SERVICE_TYPES = [
     service_base_endpoint:
       "https://project-name/api/services/v1/dispatch/whatsapp",
     description: "WhatsApp messaging providers",
+    is_failover: true,
   },
 
   {
@@ -33,6 +36,7 @@ const SERVICE_TYPES = [
     service_base_endpoint:
       "https://project-name.com/api/services/v1/dispatch/ibv",
     description: "Bank account verification and open banking providers",
+    is_failover: false,
   },
 
   {
@@ -41,6 +45,23 @@ const SERVICE_TYPES = [
     service_base_endpoint:
       "https://project-name.com/api/services/v1/dispatch/credit-score",
     description: "Credit bureau and credit scoring providers",
+    is_failover: false,
+  },
+  {
+    slug: "payment-gateway",
+    name: "Payment Gateway",
+    service_base_endpoint:
+      "https://project-name.com/api/services/v1/dispatch/payment-gateway",
+    description: "Payment processing providers",
+    is_failover: false,
+  },
+  {
+    slug: "ach",
+    name: "ACH",
+    service_base_endpoint:
+      "https://project-name.com/api/services/v1/dispatch/ach",
+    description: "Automated Clearing House providers",
+    is_failover: false,
   },
 ];
 
@@ -920,6 +941,268 @@ const PROVIDERS = [
         is_secret: true,
         placeholder: "Enter Client Secret",
         description: "Equifax Client Secret",
+      },
+    ],
+  },
+
+  // =============================================================================
+  // payment gateway providers
+  // =============================================================================
+
+  {
+    service_slug: "payment-gateway",
+    name: "Razorpay",
+    slug: "razorpay",
+    display_order: 1,
+    base_endpoint: "https://api.razorpay.com",
+    required_credential_schema: [
+      {
+        key: "key_id",
+        label: "Key ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Key ID",
+        description: "Razorpay Key ID",
+      },
+      {
+        key: "key_secret",
+        label: "Key Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Key Secret",
+        description: "Razorpay Key Secret",
+      },
+    ],
+  },
+  {
+    service_slug: "payment-gateway",
+    name: "PayU",
+    slug: "payu",
+    display_order: 2,
+    base_endpoint: "https://secure.payu.in",
+    required_credential_schema: [
+      {
+        key: "merchant_key",
+        label: "Merchant Key",
+        type: "text",
+        required: true,
+        placeholder: "Enter Merchant Key",
+        description: "PayU Merchant Key",
+      },
+      {
+        key: "merchant_salt",
+        label: "Merchant Salt",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Merchant Salt",
+        description: "PayU Merchant Salt",
+      },
+    ],
+  },
+  {
+    service_slug: "payment-gateway",
+    name: "PhonePe",
+    slug: "phonepe",
+    display_order: 3,
+    base_endpoint: "https://api.phonepe.com",
+    required_credential_schema: [
+      {
+        key: "merchant_id",
+        label: "Merchant ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Merchant ID",
+        description: "PhonePe Merchant ID",
+      },
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "PhonePe Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "PhonePe Client Secret",
+      },
+    ],
+  },
+  {
+    service_slug: "payment-gateway",
+    name: "IppoPay",
+    slug: "ippopay",
+    display_order: 4,
+    base_endpoint: "https://api.ippopay.com",
+    required_credential_schema: [
+      {
+        key: "api_key",
+        label: "API Key",
+        type: "text",
+        required: true,
+        placeholder: "Enter API Key",
+        description: "IppoPay API Key",
+      },
+      {
+        key: "api_secret",
+        label: "API Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter API Secret",
+        description: "IppoPay API Secret",
+      },
+    ],
+  },
+  {
+    service_slug: "payment-gateway",
+    name: "Stripe",
+    slug: "stripe",
+    display_order: 5,
+    base_endpoint: "https://api.stripe.com",
+    required_credential_schema: [
+      {
+        key: "publishable_key",
+        label: "Publishable Key",
+        type: "text",
+        required: true,
+        placeholder: "Enter Publishable Key",
+        description: "Stripe Publishable Key",
+      },
+      {
+        key: "secret_key",
+        label: "Secret Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Secret Key",
+        description: "Stripe Secret Key",
+      },
+    ],
+  },
+  {
+    service_slug: "payment-gateway",
+    name: "PayPal",
+    slug: "paypal",
+    display_order: 6,
+    base_endpoint: "https://api.paypal.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+        placeholder: "Enter Client ID",
+        description: "PayPal Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+        placeholder: "Enter Client Secret",
+        description: "PayPal Client Secret",
+      },
+    ],
+  },
+
+  // =============================================================================
+  // ACH providers
+  // =============================================================================
+
+  {
+    service_slug: "ach",
+    name: "Stripe ACH",
+    slug: "stripe_ach",
+    display_order: 1,
+    base_endpoint: "https://api.stripe.com",
+    required_credential_schema: [
+      {
+        key: "publishable_key",
+        label: "Publishable Key",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "secret_key",
+        label: "Secret Key",
+        type: "password",
+        required: true,
+        is_secret: true,
+      },
+    ],
+  },
+  {
+    service_slug: "ach",
+    name: "Loan Payment Pro",
+    slug: "loan_payment_pro",
+    display_order: 2,
+    base_endpoint: "https://api.loanpaymentpro.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
+      },
+    ],
+  },
+  {
+    service_slug: "ach",
+    name: "Square",
+    slug: "square",
+    display_order: 3,
+    base_endpoint: "https://connect.squareup.com",
+    required_credential_schema: [
+      {
+        key: "application_id",
+        label: "Application ID",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "access_token",
+        label: "Access Token",
+        type: "password",
+        required: true,
+        is_secret: true,
+      },
+    ],
+  },
+  {
+    service_slug: "ach",
+    name: "Dwolla",
+    slug: "dwolla",
+    display_order: 4,
+    base_endpoint: "https://api.dwolla.com",
+    required_credential_schema: [
+      {
+        key: "client_id",
+        label: "Client ID",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "client_secret",
+        label: "Client Secret",
+        type: "password",
+        required: true,
+        is_secret: true,
       },
     ],
   },
