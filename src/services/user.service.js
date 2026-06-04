@@ -225,7 +225,23 @@ export const removeEnvironmentFromUser = async (
 };
 
 /*-------- get user assigned projects and environments -------- */
-export const userAssignedProjectsEnvironments = async (user_id) => {
+
+// Utility function to mask API keys (show only first 4 and last 4 characters)
+const maskValue = (value) => {
+  if (!value || typeof value !== "string") return value;
+
+  if (value.length <= 5) {
+    return "••••";
+  }
+
+  return `${value.slice(0, 4)}•••••${value.slice(-4)}`;
+};
+
+// Function to get user assigned projects and environments with masked API keys
+export const userAssignedProjectsEnvironments = async (
+  user_id,
+  mask_secrets = true,
+) => {
   const assignedEnvironments = await prisma.environmentEmployee.findMany({
     where: {
       user_id,
@@ -285,6 +301,7 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
                   name: true,
                   description: true,
                   service_base_endpoint: true,
+                  is_failover: true,
                 },
               },
             },
@@ -295,6 +312,8 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
   });
 
   const projectMap = new Map();
+
+  const order = ["SMS", "Email", "WhatsApp", "IBV", "Credit Score", "Payment Gateway", "ACH"];
 
   assignedEnvironments.forEach(({ project, environment }) => {
     if (!project || !environment) return;
@@ -323,6 +342,8 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
 
           service_name: service.service_type?.name || "Unknown Service",
 
+          is_failover: service.service_type?.is_failover || false,
+
           service_endpoint: service.service_type?.service_base_endpoint || "",
 
           service_description: service.service_type?.description || "",
@@ -334,15 +355,27 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
 
       const serviceItem = serviceMap.get(serviceKey);
 
+      // ==================================================
+      // BUILD CREDENTIAL OBJECT
+      // ==================================================
+
       const credentialData = {
         ...(service.credentials || {}),
-
-        provider_name: service.provider?.name || "",
-
-        service_type: service.service_type?.name || "",
-
-        service_description: service.service_type?.description || "",
       };
+
+      // ==================================================
+      // MASK VALUES IF REQUESTED
+      // ==================================================
+
+      if (mask_secrets) {
+        Object.keys(credentialData).forEach((key) => {
+          credentialData[key] = maskValue(String(credentialData[key]));
+        });
+      }
+
+      credentialData.provider_name = service.provider?.name || "";
+
+      credentialData.service_type = service.service_type?.name || "";
 
       const mode = (service.mode || "").toLowerCase();
 
@@ -407,7 +440,9 @@ export const userAssignedProjectsEnvironments = async (user_id) => {
 
       api_keys: formattedApiKeys,
 
-      services: Array.from(serviceMap.values()),
+      services: Array.from(serviceMap.values()).sort(
+        (a, b) => order.indexOf(a.service_name) - order.indexOf(b.service_name),
+      ),
     };
 
     projectMap.get(project.public_id).environments.push(formattedEnvironment);

@@ -133,7 +133,9 @@ export const userAssignedProjectsEnvironments = async (req, res) => {
     if (!user_id) {
       return errorResponse(res, "User ID is required");
     }
-    const result = await userService.userAssignedProjectsEnvironments(user_id);
+    const result = await userService.userAssignedProjectsEnvironments(
+      user_id,
+    );
     return successResponse(res, result, "User assigned projects and environments retrieved successfully");
   } catch (error) {
     return errorResponse(res, "Failed to retrieve user assigned projects and environments", error.message);
