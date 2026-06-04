@@ -134,6 +134,16 @@ export const assignProviderToEnvironment = async ({
   provider_slug
 }) => {
 
+  const serviceType =
+    await prisma.serviceType.findUnique({
+      where: {
+        public_id: service_type_id,
+      },
+      select: {
+        is_failover: true,
+      },
+    });
+
   const existingCount = await prisma.environmentServiceProvider.count({
     where: {
       environment_id,
@@ -145,35 +155,97 @@ export const assignProviderToEnvironment = async ({
 
   const newSortOrder = existingCount + 1;
   console.log("🔢 New sort_order:", newSortOrder);
-  const envProvider = await prisma.environmentServiceProvider.upsert({
-    where: {
-      environment_id_service_type_id_provider_id_mode_is_active: {
+  if (!serviceType?.is_failover) {
+
+    const modes = ["LIVE", "SANDBOX"];
+
+    const results = [];
+
+    for (const targetMode of modes) {
+
+      const existingCount =
+        await prisma.environmentServiceProvider.count({
+          where: {
+            environment_id,
+            service_type_id,
+            mode: targetMode,
+            is_active: true,
+          },
+        });
+
+      const provider =
+        await prisma.environmentServiceProvider.upsert({
+          where: {
+            environment_id_service_type_id_provider_id_mode_is_active: {
+              environment_id,
+              service_type_id,
+              provider_id,
+              mode: targetMode,
+              is_active: true,
+            },
+          },
+
+          update: {
+            credentials,
+          },
+
+          create: {
+            environment_id,
+            service_type_id,
+            provider_id,
+            credentials,
+            endpoint,
+            mode: targetMode,
+            provider_name,
+            is_active: true,
+            sort_order: existingCount + 1,
+            provider_slug,
+          },
+        });
+
+      results.push(provider);
+
+    }
+
+    return results[0];
+
+  }
+
+  const envProvider =
+    await prisma.environmentServiceProvider.upsert({
+      where: {
+        environment_id_service_type_id_provider_id_mode_is_active: {
+          environment_id,
+          service_type_id,
+          provider_id,
+          mode,
+          is_active: true,
+        },
+      },
+
+      update: {
+        credentials,
+      },
+
+      create: {
         environment_id,
         service_type_id,
         provider_id,
+        credentials,
+        endpoint,
         mode,
+        provider_name,
         is_active: true,
+        sort_order: newSortOrder,
+        provider_slug,
       },
-    },
+    });
 
-    update: {
-      credentials,
-    },
+  console.log(
+    "✅ Created provider:",
+    envProvider.sort_order
+  );
 
-    create: {
-      environment_id,
-      service_type_id,
-      provider_id,
-      credentials,
-      endpoint,
-      mode,
-      provider_name,
-      is_active: true,
-      sort_order: newSortOrder,
-      provider_slug,
-    },
-  });
-  console.log("✅ Created provider:", envProvider.sort_order);
   return envProvider;
 };
 
