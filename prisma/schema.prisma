@@ -58,6 +58,8 @@ model ServiceType {
 
   is_active Boolean @default(true)
 
+   is_failover           Boolean @default(true)
+
   providers Provider[]
 
   environment_service_providers EnvironmentServiceProvider[]

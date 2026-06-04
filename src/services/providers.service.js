@@ -10,6 +10,7 @@ export const getAllServices = async () => {
       slug: true,
       service_base_endpoint: true,
       is_active: true,
+      is_failover: true,
     },
   });
 
