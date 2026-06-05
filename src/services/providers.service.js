@@ -56,11 +56,47 @@ export const getProvidersByEnvironmentId =
       select: { service_base_endpoint: true },
     });
 
+    const maskValue = (value) => {
+
+      if (!value || typeof value !== "string") {
+        return value;
+      }
+
+      if (value.length <= 4) {
+        return "*".repeat(value.length);
+      }
+
+      const first = value.slice(0, 2);
+      const last = value.slice(-2);
+
+      return (
+        first +
+        "*".repeat(value.length - 4) +
+        last
+      );
+    };
+
     const formattedProviders =
       providers.map((provider) => ({
+
         ...provider,
 
-        endpoint: service?.service_base_endpoint || "",
+        credentials: Object.fromEntries(
+          Object.entries(
+            provider.credentials || {}
+          ).map(([key, value]) => [
+
+            key,
+
+            key === "mode"
+              ? value
+              : maskValue(value),
+
+          ])
+        ),
+
+        endpoint:
+          service?.service_base_endpoint || "",
       }));
 
     const result = {
@@ -290,3 +326,90 @@ export const deleteProviderFromEnvironment = async (id) => {
   });
 
 };
+
+// Returns original credentials after authentication
+export const unlockServiceCredentials =
+  async ({
+    environmentId,
+    serviceId,
+  }) => {
+
+    const providers =
+      await prisma.environmentServiceProvider.findMany({
+        where: {
+          environment_id:
+            environmentId,
+          service_type_id:
+            serviceId,
+        },
+
+        orderBy: {
+          sort_order: "asc",
+        },
+
+        select: {
+          public_id: true,
+          provider_name: true,
+          mode: true,
+          is_active: true,
+          last_error_message: true,
+          last_failed_at: true,
+          credentials: true,
+          sort_order: true,
+          provider: {
+            select: {
+              base_endpoint: true,
+              slug: true,
+            },
+          },
+        },
+      });
+
+    const service =
+      await prisma.serviceType.findFirst({
+        where: {
+          public_id: serviceId,
+        },
+        select: {
+          service_base_endpoint: true,
+        },
+      });
+
+    const result = {
+      live: [],
+      sandbox: [],
+      live_count: 0,
+      sandbox_count: 0,
+    };
+
+    providers.forEach(
+      (provider) => {
+
+        const item = {
+          ...provider,
+
+          endpoint:
+            service?.service_base_endpoint ||
+            "",
+        };
+
+        if (
+          provider.mode === "LIVE"
+        ) {
+
+          result.live.push(item);
+
+          result.live_count++;
+
+        } else {
+
+          result.sandbox.push(item);
+
+          result.sandbox_count++;
+
+        }
+      }
+    );
+
+    return result;
+  };

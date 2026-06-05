@@ -1,18 +1,22 @@
 import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { sendEmail } from "./email.service.js";
+import {
+  accountSetupTemplate
+} from "../templates/accountSetup.template.js";
 
 /* -------- create user -------- */
 export const createUser = async (
   user_name,
   email,
-  password,
   role,
   is_active,
 ) => {
-  const hashedPassword = await bcrypt.hash(password, 12);
+
   const isEmailExists = await prisma.user.findFirst({
     where: {
-      email: email,
+      email,
       is_deleted: false,
     },
   });
@@ -20,15 +24,47 @@ export const createUser = async (
   if (isEmailExists) {
     throw new Error("Email already exists");
   }
-  return await prisma.user.create({
-    data: {
-      user_name,
-      email,
-      password: hashedPassword,
-      role,
-      is_active,
-    },
+
+  const setupToken =
+    crypto.randomBytes(32).toString("hex");
+
+  const expiry =
+    new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
+
+  const user =
+    await prisma.user.create({
+      data: {
+        user_name,
+        email,
+        password: null,
+        credential_passkey: null,
+        role,
+        is_active,
+        reset_token: setupToken,
+        reset_token_expiry: expiry,
+      },
+    });
+
+  const setupUrl =
+    `${process.env.FRONTEND_URL}/setup-account/${setupToken}`;
+
+  const html =
+    accountSetupTemplate({
+      userName: user_name,
+      setupUrl,
+    });
+
+  await sendEmail({
+    to: email,
+    subject: "Setup Your Account",
+    message: "Please setup your account.",
+    html,
+
   });
+  console.log("Onboarding email sent");
+  return user;
 };
 
 /* -------- get all users -------- */

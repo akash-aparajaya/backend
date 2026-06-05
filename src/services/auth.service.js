@@ -6,7 +6,10 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import { accountActivatedTemplate }
+  from "../templates/accountActivated.template.js";
+import { sendEmail }
+  from "../services/email.service.js";
 
 export const loginService = async ({ email, password }) => {
   const user = await prisma.user.findFirst({
@@ -19,7 +22,11 @@ export const loginService = async ({ email, password }) => {
   if (!user) {
     throw new Error("email is incorrect");
   }
-
+  if (!user.password) {
+    throw new Error(
+      "Account setup not completed"
+    );
+  }
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
@@ -222,3 +229,123 @@ export const updatePasswordService = async (user_id, newPassword) => {
 
   return { message: "Password reset successful" };
 };
+
+export const validateSetupTokenService =
+  async (token) => {
+
+    const user =
+      await prisma.user.findFirst({
+        where: {
+          reset_token: token,
+        },
+      });
+
+    if (!user) {
+      return {
+        status: "configured",
+      };
+    }
+
+    if (
+      user.reset_token_expiry <
+      new Date()
+    ) {
+      return {
+        status: "expired",
+      };
+    }
+
+    return {
+      status: "valid",
+      email: user.email,
+      user_name: user.user_name,
+    };
+  };
+
+export const completeSetupService =
+  async ({
+    token,
+    password,
+    credentialPasskey,
+  }) => {
+
+    const user =
+      await prisma.user.findFirst({
+        where: {
+          reset_token: token,
+          reset_token_expiry: {
+            gte: new Date(),
+          },
+        },
+      });
+
+    if (!user) {
+      throw new Error(
+        "Invalid or expired token"
+      );
+    }
+
+    if (!/^\d{6}$/.test(credentialPasskey)) {
+      throw new Error(
+        "Credential passkey must contain exactly 6 digits"
+      );
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(password, 12);
+
+    const hashedPasskey =
+      await bcrypt.hash(
+        credentialPasskey,
+        12
+      );
+
+    await prisma.user.update({
+      where: {
+        public_id: user.public_id,
+      },
+
+      data: {
+
+        password:
+          hashedPassword,
+
+        credential_passkey:
+          hashedPasskey,
+
+        reset_token:
+          null,
+
+        reset_token_expiry:
+          null,
+      },
+    });
+
+    /* -------------------------------
+   SEND ACCOUNT ACTIVATED EMAIL
+-------------------------------- */
+
+    /* -------------------------------
+   SEND ACCOUNT ACTIVATED EMAIL
+-------------------------------- */
+
+    await sendEmail({
+      to: user.email,
+
+      subject:
+        "Your Account Has Been Activated",
+
+      html:
+        accountActivatedTemplate({
+          userName:
+            user.user_name,
+
+          loginUrl:
+            `${process.env.FRONTEND_URL}/`,
+        }),
+    });
+
+    return {
+      success: true,
+    };
+  };

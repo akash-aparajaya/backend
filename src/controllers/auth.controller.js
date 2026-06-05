@@ -5,6 +5,8 @@ import {
   forgotPasswordService,
   resetPasswordService,
   updatePasswordService,
+  validateSetupTokenService,
+  completeSetupService,
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -81,3 +83,55 @@ export const updatePassword = async (req, res) => {
     return errorResponse(res, "Failed to change password", error.message);
   }
 };
+
+export const validateSetupToken =
+  async (req, res) => {
+
+    try {
+
+      const result =
+        await validateSetupTokenService(
+          req.params.token
+        );
+
+      return successResponse(
+        res,
+        result,
+        "Token validated"
+      );
+
+    } catch (error) {
+
+      return errorResponse(
+        res,
+        error.message
+      );
+
+    }
+  };
+
+export const completeSetup =
+  async (req, res) => {
+
+    try {
+
+      const result =
+        await completeSetupService(
+          req.body
+        );
+
+      return successResponse(
+        res,
+        result,
+        "Account setup successful"
+      );
+
+    } catch (error) {
+
+      return errorResponse(
+        res,
+        error.message
+      );
+
+    }
+  };

@@ -30,7 +30,8 @@ const sendSlackAlert = async (message) => {
   }
 };
 
-export const sendEmail = async ({ to, subject, message }) => {
+export const sendEmail = async ({ to, subject, message,
+  html, }) => {
   try {
     // 🔹 Try Primary
     const res = await primaryTransport.sendMail({
@@ -38,6 +39,7 @@ export const sendEmail = async ({ to, subject, message }) => {
       to,
       subject,
       text: message,
+      html,
     });
 
     return { success: true, provider: "PRIMARY", messageId: res.messageId };
@@ -52,6 +54,7 @@ export const sendEmail = async ({ to, subject, message }) => {
         to,
         subject,
         text: message,
+        html,
       });
 
       return { success: true, provider: "SECONDARY", messageId: res2.messageId };

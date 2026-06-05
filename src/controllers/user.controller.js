@@ -24,7 +24,6 @@ export const createUser = async (req, res) => {
     const user = await userService.createUser(
       user_name,
       email,
-      password,
       role,
       is_active,
     );
@@ -125,7 +124,7 @@ export const removeEnvironmentFromUser = async (req, res) => {
   } catch (error) {
     return errorResponse(res, "Failed to remove environment from user", error.message);
   }
-};  
+};
 
 export const userAssignedProjectsEnvironments = async (req, res) => {
   try {

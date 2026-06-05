@@ -5,7 +5,9 @@ import {
   logout,
   forgotPassword,
   resetPassword,
-  updatePassword
+  updatePassword,
+  validateSetupToken,
+  completeSetup
 } from "../controllers/auth.controller.js";
 
 import { createAdmin } from "../controllers/admin.controller.js";
@@ -38,6 +40,16 @@ router.post(
   verifyToken,
   allowRoles("SUPER_ADMIN"),
   createAdmin,
+);
+
+router.get(
+  "/setup-account/:token",
+  validateSetupToken
+);
+
+router.post(
+  "/setup-account",
+  completeSetup
 );
 
 export default router;

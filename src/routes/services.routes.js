@@ -9,8 +9,11 @@ import {
   updateProviderController,
   deleteProviderController,
   getProvidersByEnvironmentIdController,
+  unlockServiceController,
+
 } from "../controllers/services.controller.js";
 import { validateApiKey } from "../middleware/apikey.middleware.js";
+import { verifyToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 /* -------- All Services -------- */
@@ -41,12 +44,19 @@ router.patch("/update-provider/:id", updateProviderController);
 router.patch("/delete-provider/:id", deleteProviderController);
 
 /* -------- SMS -------- */
-router.post("/send-sms",validateApiKey, sendSmsController);
+router.post("/send-sms", validateApiKey, sendSmsController);
 
 /* -------- EMAIL -------- */
 router.post("/send-email", validateApiKey, sendEmailController);
 
 // /* -------- WHATSAPP -------- */
 // router.post("/send-whatsapp", validateApiKey, sendWhatsAppController);
+
+// /* -------- Unmask- service-------- */
+router.post(
+  "/unlock-service",
+  verifyToken,
+  unlockServiceController
+);
 
 export default router;
