@@ -54,10 +54,7 @@ export const loginService = async ({ email, password }) => {
   };
 };
 
-export const refreshService = async ({
-  refreshToken,
-}) => {
-
+export const refreshService = async ({ refreshToken }) => {
   if (!refreshToken) {
     throw new Error("Refresh token required");
   }
@@ -65,16 +62,9 @@ export const refreshService = async ({
   let payload;
 
   try {
-
-    payload = await verifyRefreshToken(
-      refreshToken
-    );
-
+    payload = await verifyRefreshToken(refreshToken);
   } catch (error) {
-
-    throw new Error(
-      "Invalid or expired refresh token"
-    );
+    throw new Error("Invalid or expired refresh token");
   }
 
   const user = await prisma.user.findUnique({
@@ -83,20 +73,13 @@ export const refreshService = async ({
     },
   });
 
-  if (
-    !user ||
-    !user.refresh_token_hash
-  ) {
+  if (!user || !user.refresh_token_hash) {
     throw new Error("Session not found");
   }
 
-  const isMatch = await bcrypt.compare(
-    refreshToken,
-    user.refresh_token_hash
-  );
+  const isMatch = await bcrypt.compare(refreshToken, user.refresh_token_hash);
 
   if (!isMatch) {
-
     await prisma.user.update({
       where: {
         public_id: user.public_id,
@@ -106,21 +89,14 @@ export const refreshService = async ({
       },
     });
 
-    throw new Error(
-      "Refresh token reuse detected"
-    );
+    throw new Error("Refresh token reuse detected");
   }
 
-  const newAccessToken =
-    await generateAccessToken(user);
+  const newAccessToken = await generateAccessToken(user);
 
-  const newRefreshToken =
-    await generateRefreshToken(user);
+  const newRefreshToken = await generateRefreshToken(user);
 
-  const newHash = await bcrypt.hash(
-    newRefreshToken,
-    12
-  );
+  const newHash = await bcrypt.hash(newRefreshToken, 12);
 
   await prisma.user.update({
     where: {
@@ -149,7 +125,6 @@ export const logoutService = async (userId) => {
 };
 
 export const forgotPasswordService = async ({ email }) => {
-
   const user = await prisma.user.findFirst({
     where: {
       email,
@@ -163,9 +138,7 @@ export const forgotPasswordService = async ({ email }) => {
 
   const reset_token = crypto.randomBytes(32).toString("hex");
 
-  const reset_token_expiry = new Date(
-    Date.now() + 60 * 60 * 1000
-  );
+  const reset_token_expiry = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.user.update({
     where: {
@@ -228,6 +201,19 @@ export const updatePasswordService = async (user_id, newPassword) => {
   });
 
   return { message: "Password reset successful" };
+};
+
+export const userVerification = async (user_id, passKey) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      public_id: user_id,
+      credential_passkey: passKey,
+      is_active: true,
+      is_deleted: false,
+    },
+  });
+
+  return user ? true : false;
 };
 
 export const validateSetupTokenService =

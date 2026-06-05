@@ -92,5 +92,4 @@ router.get(
   userController.userAssignedProjectsEnvironments,
 );
 
-
 export default router;

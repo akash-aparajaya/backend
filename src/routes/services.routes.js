@@ -11,6 +11,7 @@ import {
   getProvidersByEnvironmentIdController,
   unlockServiceController,
 
+  revealProviderCredentials
 } from "../controllers/services.controller.js";
 import { validateApiKey } from "../middleware/apikey.middleware.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
@@ -42,6 +43,8 @@ router.patch("/update-provider/:id", updateProviderController);
 
 /* -------- delete provider -------- */
 router.patch("/delete-provider/:id", deleteProviderController);
+
+router.get("/reveal-provider-credentials/:id", revealProviderCredentials);
 
 /* -------- SMS -------- */
 router.post("/send-sms", validateApiKey, sendSmsController);

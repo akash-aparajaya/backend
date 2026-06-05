@@ -7,6 +7,7 @@ import {
   updatePasswordService,
   validateSetupTokenService,
   completeSetupService,
+  userVerification,
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -81,6 +82,23 @@ export const updatePassword = async (req, res) => {
     return successResponse(res, null, "Password changed successfully", 201);
   } catch (error) {
     return errorResponse(res, "Failed to change password", error.message);
+  }
+};
+
+export const userVerifySensitiveUserAccess = async (req, res) => {
+  try {
+    const { passKey } = req.body;
+    const userId = req.user.id;
+    const data = await userVerification(
+      userId,
+      passKey,
+    );
+     if (!data) {
+      return errorResponse(res, "verification failed", 404);
+    }
+    return successResponse(res, data, "verification successfully done", 200);
+  } catch (err) {
+    errorResponse(res, err.message, err);
   }
 };
 

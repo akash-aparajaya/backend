@@ -18,43 +18,40 @@ export const getAllServices = async () => {
 };
 
 // * -------- get providers by environment id -------- */
-export const getProvidersByEnvironmentId =
-  async (environmentId, serviceId) => {
+export const getProvidersByEnvironmentId = async (environmentId, serviceId) => {
+  const providers = await prisma.environmentServiceProvider.findMany({
+    where: {
+      environment_id: environmentId,
+      service_type_id: serviceId,
+      // is_active: true,
+    },
 
-    const providers =
-      await prisma.environmentServiceProvider.findMany({
-        where: {
-          environment_id: environmentId,
-          service_type_id: serviceId,
-          // is_active: true,
-        },
+    orderBy: {
+      sort_order: "asc",
+    },
 
-        orderBy: {
-          sort_order: "asc",
-        },
-
+    select: {
+      public_id: true,
+      provider_name: true,
+      mode: true,
+      is_active: true,
+      last_error_message: true,
+      last_failed_at: true,
+      credentials: true,
+      sort_order: true,
+      provider: {
         select: {
-          public_id: true,
-          provider_name: true,
-          mode: true,
-          is_active: true,
-          last_error_message: true,
-          last_failed_at: true,
-          credentials: true,
-          sort_order: true,
-          provider: {
-            select: {
-              base_endpoint: true,
-              slug: true,
-            },
-          },
+          base_endpoint: true,
+          slug: true,
         },
-      });
+      },
+    },
+  });
 
-    const service = await prisma.serviceType.findFirst({
-      where: { public_id: serviceId },
-      select: { service_base_endpoint: true },
-    });
+  const service = await prisma.serviceType.findFirst({
+    where: { public_id: serviceId },
+    select: { service_base_endpoint: true },
+  });
 
     const maskValue = (value) => {
 
@@ -99,31 +96,27 @@ export const getProvidersByEnvironmentId =
           service?.service_base_endpoint || "",
       }));
 
-    const result = {
-      live: [],
-      sandbox: [],
-      live_count: 0,
-      sandbox_count: 0,
-    };
-
-    formattedProviders.forEach((provider) => {
-
-      if (provider.mode === "LIVE") {
-
-        result.live.push(provider);
-
-        result.live_count++;
-
-      } else {
-
-        result.sandbox.push(provider);
-
-        result.sandbox_count++;
-      }
-    });
-
-    return result;
+  const result = {
+    live: [],
+    sandbox: [],
+    live_count: 0,
+    sandbox_count: 0,
   };
+
+  formattedProviders.forEach((provider) => {
+    if (provider.mode === "LIVE") {
+      result.live.push(provider);
+
+      result.live_count++;
+    } else {
+      result.sandbox.push(provider);
+
+      result.sandbox_count++;
+    }
+  });
+
+  return result;
+};
 
 //* -------- get providers by service id -------- */
 export const getProvidersByServiceId = async (serviceId) => {
@@ -167,18 +160,16 @@ export const assignProviderToEnvironment = async ({
   credentials,
   endpoint,
   provider_name,
-  provider_slug
+  provider_slug,
 }) => {
-
-  const serviceType =
-    await prisma.serviceType.findUnique({
-      where: {
-        public_id: service_type_id,
-      },
-      select: {
-        is_failover: true,
-      },
-    });
+  const serviceType = await prisma.serviceType.findUnique({
+    where: {
+      public_id: service_type_id,
+    },
+    select: {
+      is_failover: true,
+    },
+  });
 
   const existingCount = await prisma.environmentServiceProvider.count({
     where: {
@@ -192,95 +183,85 @@ export const assignProviderToEnvironment = async ({
   const newSortOrder = existingCount + 1;
   console.log("🔢 New sort_order:", newSortOrder);
   if (!serviceType?.is_failover) {
-
     const modes = ["LIVE", "SANDBOX"];
 
     const results = [];
 
     for (const targetMode of modes) {
+      const existingCount = await prisma.environmentServiceProvider.count({
+        where: {
+          environment_id,
+          service_type_id,
+          mode: targetMode,
+          is_active: true,
+        },
+      });
 
-      const existingCount =
-        await prisma.environmentServiceProvider.count({
-          where: {
-            environment_id,
-            service_type_id,
-            mode: targetMode,
-            is_active: true,
-          },
-        });
-
-      const provider =
-        await prisma.environmentServiceProvider.upsert({
-          where: {
-            environment_id_service_type_id_provider_id_mode_is_active: {
-              environment_id,
-              service_type_id,
-              provider_id,
-              mode: targetMode,
-              is_active: true,
-            },
-          },
-
-          update: {
-            credentials,
-          },
-
-          create: {
+      const provider = await prisma.environmentServiceProvider.upsert({
+        where: {
+          environment_id_service_type_id_provider_id_mode_is_active: {
             environment_id,
             service_type_id,
             provider_id,
-            credentials,
-            endpoint,
             mode: targetMode,
-            provider_name,
             is_active: true,
-            sort_order: existingCount + 1,
-            provider_slug,
           },
-        });
+        },
 
-      results.push(provider);
+        update: {
+          credentials,
+        },
 
-    }
-
-    return results[0];
-
-  }
-
-  const envProvider =
-    await prisma.environmentServiceProvider.upsert({
-      where: {
-        environment_id_service_type_id_provider_id_mode_is_active: {
+        create: {
           environment_id,
           service_type_id,
           provider_id,
-          mode,
+          credentials,
+          endpoint,
+          mode: targetMode,
+          provider_name,
           is_active: true,
+          sort_order: existingCount + 1,
+          provider_slug,
         },
-      },
+      });
 
-      update: {
-        credentials,
-      },
+      results.push(provider);
+    }
 
-      create: {
+    return results[0];
+  }
+
+  const envProvider = await prisma.environmentServiceProvider.upsert({
+    where: {
+      environment_id_service_type_id_provider_id_mode_is_active: {
         environment_id,
         service_type_id,
         provider_id,
-        credentials,
-        endpoint,
         mode,
-        provider_name,
         is_active: true,
-        sort_order: newSortOrder,
-        provider_slug,
       },
-    });
+    },
 
-  console.log(
-    "✅ Created provider:",
-    envProvider.sort_order
-  );
+    update: {
+      credentials,
+    },
+
+    create: {
+      environment_id,
+      service_type_id,
+      provider_id,
+      credentials,
+      endpoint,
+      mode,
+      provider_name,
+      is_active: true,
+      sort_order: newSortOrder,
+      provider_slug,
+    },
+  });
+
+  console.log("✅ Created provider:", envProvider.sort_order);
 
   return envProvider;
 };
@@ -291,14 +272,12 @@ export const updateProviderInEnvironment = async ({
   credentials,
   is_active,
 }) => {
-
   return await prisma.environmentServiceProvider.update({
     where: {
       public_id: id,
     },
 
     data: {
-
       ...(credentials && {
         credentials,
 
@@ -310,21 +289,33 @@ export const updateProviderInEnvironment = async ({
       ...(typeof is_active === "boolean" && {
         is_active,
       }),
-
     },
   });
-
 };
 
 //* -------- delete provider -------- */
 export const deleteProviderFromEnvironment = async (id) => {
-
   return await prisma.environmentServiceProvider.delete({
     where: {
       public_id: id,
     },
   });
+};
 
+// reveal provider credentials
+export const revealProvider = async (id) => {
+  const provider = await prisma.environmentServiceProvider.findFirst({
+    where: {
+      public_id: id,
+      is_active: true,
+    },
+  });
+
+  if (!provider) {
+    throw new Error("Provider not found");
+  }
+
+  return provider.credentials;
 };
 
 // Returns original credentials after authentication

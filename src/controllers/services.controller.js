@@ -84,34 +84,17 @@ export const createProviderController = async (req, res) => {
 /* -------- update provider -------- */
 export const updateProviderController = async (req, res) => {
   try {
+    const { id, credentials, is_active } = req.body;
 
-    const {
+    const provider = await providersService.updateProviderInEnvironment({
       id,
       credentials,
       is_active,
-    } = req.body;
+    });
 
-    const provider =
-      await providersService.updateProviderInEnvironment({
-        id,
-        credentials,
-        is_active,
-      });
-
-    return successResponse(
-      res,
-      provider,
-      "Provider updated successfully"
-    );
-
+    return successResponse(res, provider, "Provider updated successfully");
   } catch (error) {
-
-    return errorResponse(
-      res,
-      "Failed to update provider",
-      error.message
-    );
-
+    return errorResponse(res, "Failed to update provider", error.message);
   }
 };
 
@@ -331,6 +314,16 @@ export const sendWhatsAppController = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+export const revealProviderCredentials = async (req, res) => {
+  try {
+    const getProvider = await providersService.revealProvider(req.params.id);
+
+    return successResponse(res, getProvider, "Provider fetched successfully");
+  } catch (error) {
+    return errorResponse(res, "Failed to fetch provider", error.message);
   }
 };
 

@@ -7,7 +7,8 @@ import {
   resetPassword,
   updatePassword,
   validateSetupToken,
-  completeSetup
+  completeSetup,
+  userVerifySensitiveUserAccess
 } from "../controllers/auth.controller.js";
 
 import { createAdmin } from "../controllers/admin.controller.js";
@@ -51,5 +52,9 @@ router.post(
   "/setup-account",
   completeSetup
 );
+
+/* -------- verify-sensitive-user-access -------- */
+router.post("/verify-sensitive-user-access", verifyToken, userVerifySensitiveUserAccess);
+
 
 export default router;

@@ -262,18 +262,99 @@ export const removeEnvironmentFromUser = async (
 
 /*-------- get user assigned projects and environments -------- */
 
+// Function to get user assigned projects and environments with masked API keys
+
 // Utility function to mask API keys (show only first 4 and last 4 characters)
 const maskValue = (value) => {
   if (!value || typeof value !== "string") return value;
 
-  if (value.length <= 5) {
-    return "••••";
+  const len = value.length;
+
+  if (len <= 4) {
+    return "****";
   }
 
-  return `${value.slice(0, 4)}•••••${value.slice(-4)}`;
+  if (len <= 8) {
+    return `${value.slice(0, 2)}****${value.slice(-2)}`;
+  }
+
+  return `${value.slice(0, 4)}${"*".repeat(Math.min(len - 8, 8))}${value.slice(-4)}`;
 };
 
-// Function to get user assigned projects and environments with masked API keys
+// Fields that must never be masked — they are metadata, not secrets
+const NON_SECRET_KEYS = [
+  "provider_name",
+  "service_type",
+  "service_description",
+  "credential_id",
+];
+const STRIP_KEYS = ["mode", "endpoint"];
+
+const SERVICE_ORDER = [
+  "SMS",
+  "Email",
+  "WhatsApp",
+  "IBV",
+  "Credit Score",
+  "Payment Gateway",
+  "ACH",
+];
+
+function sanitizeCredential(service, mask_secrets) {
+  const credential = {
+    ...(service.credentials || {}),
+    credential_id: service.public_id,
+    provider_name: service.provider?.name || "",
+    service_type: service.service_type.name || "",
+  };
+  STRIP_KEYS.forEach((key) => {
+    delete credential[key];
+  });
+
+  if (mask_secrets) {
+    Object.keys(credential).forEach((key) => {
+      if (!NON_SECRET_KEYS.includes(key)) {
+        credential[key] = maskValue(String(credential[key]));
+      }
+    });
+  }
+
+  return credential;
+}
+
+function formatApiKey(key) {
+  const createdDate = new Date(key.created_at);
+  const expiryDate = new Date(createdDate);
+
+  expiryDate.setDate(expiryDate.getDate() + (key.expires_in_days || 0));
+
+  const remainingDays = Math.max(
+    Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+    0,
+  );
+
+  return {
+    public_id: key.public_id,
+    prefix: key.prefix,
+    mode: key.mode,
+    expires_in_days: key.expires_in_days,
+    created_at: key.created_at,
+    last_used_at: key.last_used_at,
+    expiry_date: expiryDate,
+    remaining_days: remainingDays,
+    token_status:
+      key.prefix && remainingDays > 0 ? "Generated" : "Not Generated",
+    is_expired: remainingDays <= 0,
+  };
+}
+
+function sortByServiceOrder(a, b) {
+  const ai = SERVICE_ORDER.indexOf(a.service_name);
+  const bi = SERVICE_ORDER.indexOf(b.service_name);
+
+  return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+}
+
 export const userAssignedProjectsEnvironments = async (
   user_id,
   mask_secrets = true,
@@ -283,7 +364,6 @@ export const userAssignedProjectsEnvironments = async (
       user_id,
       status: true,
     },
-
     include: {
       project: {
         select: {
@@ -292,18 +372,15 @@ export const userAssignedProjectsEnvironments = async (
           project_description: true,
         },
       },
-
       environment: {
         select: {
           public_id: true,
           environment_name: true,
-
           api_keys: {
             where: {
               is_active: true,
               is_deleted: false,
             },
-
             select: {
               public_id: true,
               prefix: true,
@@ -313,7 +390,6 @@ export const userAssignedProjectsEnvironments = async (
               last_used_at: true,
             },
           },
-
           environment_service_providers: {
             where: {
               is_active: true,
@@ -327,10 +403,9 @@ export const userAssignedProjectsEnvironments = async (
                   public_id: true,
                   name: true,
                   slug: true,
-                  base_endpoint: true,
+                  base_endpoint: false,
                 },
               },
-
               service_type: {
                 select: {
                   public_id: true,
@@ -349,8 +424,6 @@ export const userAssignedProjectsEnvironments = async (
 
   const projectMap = new Map();
 
-  const order = ["SMS", "Email", "WhatsApp", "IBV", "Credit Score", "Payment Gateway", "ACH"];
-
   assignedEnvironments.forEach(({ project, environment }) => {
     if (!project || !environment) return;
 
@@ -363,10 +436,6 @@ export const userAssignedProjectsEnvironments = async (
       });
     }
 
-    // ==================================================
-    // GROUP BY SERVICE TYPE (EMAIL, SMS, WHATSAPP)
-    // ==================================================
-
     const serviceMap = new Map();
 
     (environment.environment_service_providers || []).forEach((service) => {
@@ -375,113 +444,29 @@ export const userAssignedProjectsEnvironments = async (
       if (!serviceMap.has(serviceKey)) {
         serviceMap.set(serviceKey, {
           id: service.service_type?.public_id,
-
           service_name: service.service_type?.name || "Unknown Service",
-
           is_failover: service.service_type?.is_failover || false,
-
           service_endpoint: service.service_type?.service_base_endpoint || "",
-
           service_description: service.service_type?.description || "",
-
           sandbox: [],
           live: [],
         });
       }
 
       const serviceItem = serviceMap.get(serviceKey);
-
-      // ==================================================
-      // BUILD CREDENTIAL OBJECT
-      // ==================================================
-
-      const credentialData = {
-        ...(service.credentials || {}),
-      };
-
-      // ==================================================
-      // MASK VALUES IF REQUESTED
-      // ==================================================
-
-      if (mask_secrets) {
-        Object.keys(credentialData).forEach((key) => {
-          credentialData[key] = maskValue(String(credentialData[key]));
-        });
-      }
-
-      credentialData.provider_name = service.provider?.name || "";
-
-      credentialData.service_type = service.service_type?.name || "";
-
+      const credentialData = sanitizeCredential(service, mask_secrets);
       const mode = (service.mode || "").toLowerCase();
 
-      if (mode === "sandbox") {
-        serviceItem.sandbox.push(credentialData);
-      }
-
-      if (mode === "live") {
-        serviceItem.live.push(credentialData);
-      }
+      if (mode === "sandbox") serviceItem.sandbox.push(credentialData);
+      if (mode === "live") serviceItem.live.push(credentialData);
     });
 
-    // ==================================================
-    // FORMAT API KEYS
-    // ==================================================
-
-    const formattedApiKeys = (environment.api_keys || []).map((key) => {
-      const currentDate = new Date();
-
-      const createdDate = new Date(key.created_at);
-
-      const expiryDate = new Date(createdDate);
-
-      expiryDate.setDate(expiryDate.getDate() + (key.expires_in_days || 0));
-
-      const remainingMs = expiryDate.getTime() - currentDate.getTime();
-
-      const remainingDays = Math.max(
-        Math.ceil(remainingMs / (1000 * 60 * 60 * 24)),
-        0,
-      );
-
-      const generated = !!key.prefix && remainingDays > 0;
-
-      return {
-        public_id: key.public_id,
-
-        prefix: key.prefix,
-
-        mode: key.mode,
-
-        expires_in_days: key.expires_in_days,
-
-        created_at: key.created_at,
-
-        last_used_at: key.last_used_at,
-
-        expiry_date: expiryDate,
-
-        remaining_days: remainingDays,
-
-        token_status: generated ? "Generated" : "Not Generated",
-
-        is_expired: remainingDays <= 0,
-      };
-    });
-
-    const formattedEnvironment = {
+    projectMap.get(project.public_id).environments.push({
       public_id: environment.public_id,
-
       environment_name: environment.environment_name,
-
-      api_keys: formattedApiKeys,
-
-      services: Array.from(serviceMap.values()).sort(
-        (a, b) => order.indexOf(a.service_name) - order.indexOf(b.service_name),
-      ),
-    };
-
-    projectMap.get(project.public_id).environments.push(formattedEnvironment);
+      api_keys: (environment.api_keys || []).map(formatApiKey),
+      services: Array.from(serviceMap.values()).sort(sortByServiceOrder),
+    });
   });
 
   return Array.from(projectMap.values());
