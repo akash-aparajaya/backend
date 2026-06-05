@@ -112,7 +112,9 @@ model User {
 
   email String 
 
-  password String
+  password String?
+
+   credential_passkey String?
 
   user_name String
 
