@@ -1,7 +1,7 @@
 import prisma from "../config/prisma.js";
 
 //* -------- get all Services -------- */
-export const getAllServices = async () => {
+export const getAllServices = async (environmentId) => {
   const services = await prisma.ServiceType.findMany({
     where: { is_active: true },
     select: {
@@ -13,8 +13,34 @@ export const getAllServices = async () => {
       is_failover: true,
     },
   });
+  if (!environmentId) {
+    return services;
+  }
+  const providerCounts =
+    await prisma.EnvironmentServiceProvider.groupBy({
+      by: ["service_type_id"],
 
-  return services;
+      where: {
+        environment_id: environmentId,
+      },
+
+      _count: {
+        public_id: true,
+      },
+    });
+
+  const countMap = {};
+
+  providerCounts.forEach((item) => {
+    countMap[item.service_type_id] =
+      item._count.public_id;
+  });
+
+  return services.map((service) => ({
+    ...service,
+    provider_count:
+      countMap[service.public_id] || 0,
+  }));
 };
 
 // * -------- get providers by environment id -------- */
@@ -53,48 +79,48 @@ export const getProvidersByEnvironmentId = async (environmentId, serviceId) => {
     select: { service_base_endpoint: true },
   });
 
-    const maskValue = (value) => {
+  const maskValue = (value) => {
 
-      if (!value || typeof value !== "string") {
-        return value;
-      }
+    if (!value || typeof value !== "string") {
+      return value;
+    }
 
-      if (value.length <= 4) {
-        return "*".repeat(value.length);
-      }
+    if (value.length <= 4) {
+      return "*".repeat(value.length);
+    }
 
-      const first = value.slice(0, 2);
-      const last = value.slice(-2);
+    const first = value.slice(0, 2);
+    const last = value.slice(-2);
 
-      return (
-        first +
-        "*".repeat(value.length - 4) +
-        last
-      );
-    };
+    return (
+      first +
+      "*".repeat(value.length - 4) +
+      last
+    );
+  };
 
-    const formattedProviders =
-      providers.map((provider) => ({
+  const formattedProviders =
+    providers.map((provider) => ({
 
-        ...provider,
+      ...provider,
 
-        credentials: Object.fromEntries(
-          Object.entries(
-            provider.credentials || {}
-          ).map(([key, value]) => [
+      credentials: Object.fromEntries(
+        Object.entries(
+          provider.credentials || {}
+        ).map(([key, value]) => [
 
-            key,
+          key,
 
-            key === "mode"
-              ? value
-              : maskValue(value),
+          key === "mode"
+            ? value
+            : maskValue(value),
 
-          ])
-        ),
+        ])
+      ),
 
-        endpoint:
-          service?.service_base_endpoint || "",
-      }));
+      endpoint:
+        service?.service_base_endpoint || "",
+    }));
 
   const result = {
     live: [],

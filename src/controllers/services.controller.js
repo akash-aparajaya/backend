@@ -12,7 +12,7 @@ import {
 /* -------- get all Services -------- */
 export const getAllServicesController = async (req, res) => {
   try {
-    const services = await providersService.getAllServices();
+    const services = await providersService.getAllServices(req.query.environment_id);
     return successResponse(res, services, "Services fetched successfully");
   } catch (error) {
     return errorResponse(res, "Failed to fetch services", error.message);
