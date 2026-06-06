@@ -9,6 +9,7 @@ import {
   validateSetupToken,
   completeSetup,
   userVerifySensitiveUserAccess,
+  updateCredentialPasskey,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 
@@ -44,5 +45,12 @@ router.get("/setup-account/:token", validateSetupToken);
 
 /* -------- setup-password-and-passkey -------- */
 router.post("/setup-account", completeSetup);
+
+/* -------- update-credential-passkey -------- */
+router.patch(
+  "/update-passkey",
+  verifyToken,
+  updateCredentialPasskey
+);
 
 export default router;

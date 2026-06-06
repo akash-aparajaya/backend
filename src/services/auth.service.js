@@ -355,3 +355,83 @@ export const completeSetupService = async ({
     success: true,
   };
 };
+
+
+// -------- UPDATE CREDENTIAL PASSKEY --------
+export const updateCredentialPasskeyService = async (
+  user_id,
+  currentPasskey,
+  newPasskey
+) => {
+
+  const user = await prisma.user.findFirst({
+    where: {
+      public_id: user_id,
+      is_active: true,
+      is_deleted: false,
+    },
+  });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  if (!user.credential_passkey) {
+    throw {
+      message: "Credential passkey not configured",
+      statusCode: 400,
+    };
+  }
+
+  const isValid = await bcrypt.compare(
+    currentPasskey,
+    user.credential_passkey
+  );
+
+  if (!isValid) {
+    throw {
+      message: "Current passkey is incorrect",
+      statusCode: 400,
+    };
+  }
+
+  if (!/^\d{6}$/.test(newPasskey)) {
+    throw {
+      message: "Passkey must be exactly 6 digits",
+      statusCode: 400,
+    };
+  }
+
+  const samePasskey = await bcrypt.compare(
+    newPasskey,
+    user.credential_passkey
+  );
+
+  if (samePasskey) {
+    throw {
+      message: "New passkey cannot be same as current passkey",
+      statusCode: 400,
+    };
+  }
+
+  const hashedPasskey = await bcrypt.hash(
+    newPasskey,
+    12
+  );
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      credential_passkey: hashedPasskey,
+    },
+  });
+
+  return {
+    success: true,
+  };
+};

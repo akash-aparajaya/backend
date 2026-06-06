@@ -124,7 +124,6 @@ export const unlockServiceController =
       const {
         environment_id,
         service_type_id,
-        credentialPasskey,
       } = req.body;
 
       const data = await unlockServiceCredentials({

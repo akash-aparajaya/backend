@@ -8,6 +8,8 @@ import {
   validateSetupTokenService,
   completeSetupService,
   userVerification,
+  updateCredentialPasskeyService,
+
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -121,5 +123,45 @@ export const completeSetup = async (req, res) => {
     return successResponse(res, result, "Account setup successful");
   } catch (error) {
     return errorResponse(res, err.message, null, err.statusCode || 500);
+  }
+};
+
+// -------- UPDATE CREDENTIAL PASSKEY --------
+export const updateCredentialPasskey = async (
+  req,
+  res
+) => {
+  try {
+
+    const {
+      currentPasskey,
+      newPasskey,
+    } = req.body;
+
+    const userId = req.user.id;
+
+    const result =
+      await updateCredentialPasskeyService(
+        userId,
+        currentPasskey,
+        newPasskey
+      );
+
+    return successResponse(
+      res,
+      result,
+      "Credential passkey updated successfully",
+      200
+    );
+
+  } catch (err) {
+
+    return errorResponse(
+      res,
+      err.message,
+      null,
+      err.statusCode || 500
+    );
+
   }
 };
