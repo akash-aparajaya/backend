@@ -19,6 +19,13 @@ export const loginService = async ({ email, password }) => {
     },
   });
 
+  if (user && !user.is_active) {
+    throw {
+      message: "Account is Deactivated Please Contact Admin",
+      statusCode: 404,
+    };
+  }
+
   if (!user) {
     throw {
       message: "Invalid Email",
@@ -265,7 +272,10 @@ export const userVerification = async (
   );
 
   if (!isValid) {
-    throw new Error("Invalid passkey");
+   throw {
+      message: "Invalid Passkey",
+      statusCode: 404,
+    };
   }
 
   return true;
