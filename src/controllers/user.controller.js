@@ -13,14 +13,15 @@ export const dashboard = async (req, res) => {
       "User data retrieved successfully",
     );
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve user data", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
 /* -------- create user -------- */
 export const createUser = async (req, res) => {
   try {
-    const { user_name, email, password, role, is_active } = req.body;
+    const { user_name, email, role, is_active } = req.body;
+
     const user = await userService.createUser(
       user_name,
       email,
@@ -29,7 +30,7 @@ export const createUser = async (req, res) => {
     );
     return successResponse(res, user, "User created successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to create user", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -39,7 +40,7 @@ export const getAllUsers = async (req, res) => {
     const users = await userService.getAllUsers();
     return successResponse(res, users, "Users retrieved successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve users", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -50,7 +51,7 @@ export const getUserById = async (req, res) => {
     const user = await userService.getUserById(userId);
     return successResponse(res, user, "User retrieved successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve user", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -65,7 +66,7 @@ export const updateUser = async (req, res) => {
 
     return successResponse(res, user, "User updated successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to update user", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -76,7 +77,7 @@ export const deleteUser = async (req, res) => {
     await userService.deleteUser(userId);
     return successResponse(res, null, "User deleted successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to delete user", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -88,7 +89,7 @@ export const changeUserStatus = async (req, res) => {
     const result = await userService.changeUserStatus(userId, is_active);
     return successResponse(res, result, "User status updated successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to update user status", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
@@ -100,43 +101,54 @@ export const changePassword = async (req, res) => {
     await userService.changePassword(userId, password);
     return successResponse(res, null, "Password changed successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to change password", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
+/* -------- get user details with projects and environments -------- */
 export const getUserDetailsWithProjectsAndEnvironments = async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await userService.getUserDetailsWithProjectsAndEnvironments(userId);
+    const user =
+      await userService.getUserDetailsWithProjectsAndEnvironments(userId);
     return successResponse(res, user, "User details retrieved successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve user details", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
+/* -------- remove environment from user -------- */
 export const removeEnvironmentFromUser = async (req, res) => {
   try {
     const user_id = req.body.user_id;
     const environment_id = req.body.environment_id;
     const project_id = req.body.project_id;
-    await userService.removeEnvironmentFromUser(user_id, environment_id, project_id);
-    return successResponse(res, null, "Environment removed from user successfully");
+    await userService.removeEnvironmentFromUser(
+      user_id,
+      environment_id,
+      project_id,
+    );
+    return successResponse(
+      res,
+      null,
+      "Environment removed from user successfully",
+    );
   } catch (error) {
-    return errorResponse(res, "Failed to remove environment from user", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
 
+/* -------- get user assigned projects and environments -------- */
 export const userAssignedProjectsEnvironments = async (req, res) => {
   try {
     const user_id = req.params.user_id;
-    if (!user_id) {
-      return errorResponse(res, "User ID is required");
-    }
-    const result = await userService.userAssignedProjectsEnvironments(
-      user_id,
+    const result = await userService.userAssignedProjectsEnvironments(user_id);
+    return successResponse(
+      res,
+      result,
+      "User assigned projects and environments retrieved successfully",
     );
-    return successResponse(res, result, "User assigned projects and environments retrieved successfully");
   } catch (error) {
-    return errorResponse(res, "Failed to retrieve user assigned projects and environments", error.message);
+    return errorResponse(res, error.message, null, error.statusCode || 500);
   }
-}
+};

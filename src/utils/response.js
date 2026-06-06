@@ -16,9 +16,10 @@ export const successResponse = (
 export const errorResponse = (
   res,
   message = "Something went wrong",
-  error = {}
+  error = null,
+  statusCode = 500
 ) => {
-  return res.status(500).json({
+  return res.status(statusCode).json({
     success: false,
     message,
     error,

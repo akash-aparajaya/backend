@@ -12,7 +12,7 @@ router.get("/", (req, res) => {
 router.get(
   "/get-users",
   verifyToken,
-  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  allowRoles(["SUPER_ADMIN", "ADMIN", "USER"]),
   userController.dashboard,
 );
 
@@ -31,6 +31,8 @@ router.get(
   allowRoles(["SUPER_ADMIN", "ADMIN"]),
   userController.getAllUsers,
 );
+
+/* -------- GET USER BY ID -------- */
 router.get(
   "/get-user-id/:id",
   verifyToken,
@@ -77,7 +79,7 @@ router.get(
   userController.getUserDetailsWithProjectsAndEnvironments,
 );
 
-/* remove the environment from the user  */
+/* -------- REMOVE ENVIRONMENT FROM USER -------- */
 router.patch(
   "/remove-environment-from-user",
   verifyToken,
@@ -85,10 +87,11 @@ router.patch(
   userController.removeEnvironmentFromUser,
 );
 
+/* -------- GET USER ASSIGNED PROJECTS AND ENVIRONMENTS -------- */
 router.get(
   "/user-assigned-projects/:user_id",
-  // verifyToken,
-  // allowRoles(["SUPER_ADMIN", "ADMIN", "USER"]),
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN", "USER"]),
   userController.userAssignedProjectsEnvironments,
 );
 

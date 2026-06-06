@@ -2,18 +2,10 @@ import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendEmail } from "./email.service.js";
-import {
-  accountSetupTemplate
-} from "../templates/accountSetup.template.js";
+import { accountSetupTemplate } from "../templates/accountSetup.template.js";
 
 /* -------- create user -------- */
-export const createUser = async (
-  user_name,
-  email,
-  role,
-  is_active,
-) => {
-
+export const createUser = async (user_name, email, role, is_active) => {
   const isEmailExists = await prisma.user.findFirst({
     where: {
       email,
@@ -22,48 +14,57 @@ export const createUser = async (
   });
 
   if (isEmailExists) {
-    throw new Error("Email already exists");
+    throw {
+      message: "Email already exists",
+      statusCode: 400,
+    };
   }
 
-  const setupToken =
-    crypto.randomBytes(32).toString("hex");
+  const setupToken = crypto.randomBytes(32).toString("hex");
 
-  const expiry =
-    new Date(
-      Date.now() + 24 * 60 * 60 * 1000
-    );
+  const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  const user =
-    await prisma.user.create({
-      data: {
-        user_name,
-        email,
-        password: null,
-        credential_passkey: null,
-        role,
-        is_active,
-        reset_token: setupToken,
-        reset_token_expiry: expiry,
-      },
-    });
+  const user = await prisma.user.create({
+    data: {
+      user_name,
+      email,
+      password: null,
+      credential_passkey: null,
+      role,
+      is_active,
+      reset_token: setupToken,
+      reset_token_expiry: expiry,
+    },
+  });
 
-  const setupUrl =
-    `${process.env.FRONTEND_URL}/setup-account/${setupToken}`;
+  if (!user) {
+    throw {
+      message: "Failed to create user",
+      statusCode: 500,
+    };
+  }
 
-  const html =
-    accountSetupTemplate({
-      userName: user_name,
-      setupUrl,
-    });
+  const setupUrl = `${process.env.FRONTEND_URL}/setup-account/${setupToken}`;
 
-  await sendEmail({
+  const html = accountSetupTemplate({
+    userName: user_name,
+    setupUrl,
+  });
+
+  const emailRes = await sendEmail({
     to: email,
     subject: "Setup Your Account",
     message: "Please setup your account.",
     html,
-
   });
-  console.log("Onboarding email sent");
+
+  if (!emailRes.success) {
+    throw {
+      message: "Failed to send email",
+      statusCode: 500,
+    };
+  }
+
   return user;
 };
 
@@ -87,6 +88,12 @@ export const getAllUsers = async () => {
     },
   });
 
+  if (!users) {
+    throw {
+      message: "Failed to retrieve users",
+      statusCode: 500,
+    };
+  }
   // Use .map() to format every user in the list
   return users.map((user) => ({
     id: user.public_id,
@@ -99,7 +106,7 @@ export const getAllUsers = async () => {
 
 /* -------- change user status -------- */
 export const changeUserStatus = async (userId, is_active) => {
-  return await prisma.user.update({
+  const user = await prisma.user.update({
     where: { public_id: userId },
     data: { is_active },
     select: {
@@ -107,11 +114,20 @@ export const changeUserStatus = async (userId, is_active) => {
       is_active: true,
     },
   });
+
+  if (!user) {
+    throw {
+      message: "Failed to update user status",
+      statusCode: 500,
+    };
+  }
+
+  return user;
 };
 
 /* -------- get user by id -------- */
 export const getUserById = async (id) => {
-  return await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { public_id: id },
     select: {
       id: true,
@@ -124,6 +140,15 @@ export const getUserById = async (id) => {
       is_deleted: true,
     },
   });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  return user;
 };
 
 /*-------- get stats data -------- */
@@ -131,7 +156,6 @@ export const getStatsData = async () => {
   const [adminCount, activeServices, activeProjects] = await Promise.all([
     prisma.user.count({
       where: {
-        // role: "ADMIN",
         is_deleted: false,
       },
     }),
@@ -149,6 +173,13 @@ export const getStatsData = async () => {
     }),
   ]);
 
+  if (!adminCount || !activeServices || !activeProjects) {
+    throw {
+      message: "Failed to get stats data",
+      statusCode: 500,
+    };
+  }
+
   return {
     totalAdmins: adminCount,
     totalServices: activeServices,
@@ -159,27 +190,56 @@ export const getStatsData = async () => {
 /* -------- change password -------- */
 export const changePassword = async (userId, password) => {
   const hashedPassword = await bcrypt.hash(password, 12);
-  return await prisma.user.update({
+  const user = await prisma.user.update({
     where: { public_id: userId },
     data: { password: hashedPassword },
   });
+
+  if (!user) {
+    throw {
+      message: "Failed to change password",
+      statusCode: 500,
+    };
+  }
+
+  return user;
 };
 
 /* -------- update user -------- */
 export const updateUser = async (userId, updatedData) => {
-  return await prisma.user.update({
+  const user = await prisma.user.update({
     where: { public_id: userId },
     data: updatedData,
   });
+
+  if (!user) {
+    throw {
+      message: "Failed to update user",
+      statusCode: 500,
+    };
+  }
+
+  return user;
 };
 
 /* -------- delete user -------- */
-export const deleteUser = async (userId) =>
-  await prisma.user.update({
+export const deleteUser = async (userId) => {
+  const user = await prisma.user.update({
     where: { public_id: userId },
     data: { is_deleted: true },
   });
 
+  if (!user) {
+    throw {
+      message: "Failed to delete user",
+      statusCode: 500,
+    };
+  }
+
+  return user;
+};
+
+/* -------- get user details with projects and environments -------- */
 export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
   const user = await prisma.user.findUnique({
     where: { public_id: userId },
@@ -211,7 +271,12 @@ export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
     },
   });
 
-  if (!user) return null;
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
 
   // 🔥 group into clean structure
   const projectMap = new Map();
@@ -241,12 +306,13 @@ export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
   };
 };
 
+/* -------- remove environment from user -------- */
 export const removeEnvironmentFromUser = async (
   user_id,
   environment_id,
   project_id,
 ) => {
-  await prisma.environmentEmployee.update({
+  const removeEnvironmentFromUser = await prisma.environmentEmployee.update({
     where: {
       environment_id_user_id_project_id: {
         environment_id,
@@ -258,13 +324,20 @@ export const removeEnvironmentFromUser = async (
       status: false,
     },
   });
+
+  if (!removeEnvironmentFromUser) {
+    throw {
+      message: "Failed to remove environment from user",
+      statusCode: 500,
+    };
+  }
+
+  return removeEnvironmentFromUser;
 };
 
 /*-------- get user assigned projects and environments -------- */
 
-// Function to get user assigned projects and environments with masked API keys
-
-// Utility function to mask API keys (show only first 4 and last 4 characters)
+/*-------- mask value -------- */
 const maskValue = (value) => {
   if (!value || typeof value !== "string") return value;
 
@@ -281,7 +354,7 @@ const maskValue = (value) => {
   return `${value.slice(0, 4)}${"*".repeat(Math.min(len - 8, 8))}${value.slice(-4)}`;
 };
 
-// Fields that must never be masked — they are metadata, not secrets
+/*-------- sanitize credential -------- */
 const NON_SECRET_KEYS = [
   "provider_name",
   "service_type",
@@ -290,6 +363,7 @@ const NON_SECRET_KEYS = [
 ];
 const STRIP_KEYS = ["mode", "endpoint"];
 
+/*-------- service order -------- */
 const SERVICE_ORDER = [
   "SMS",
   "Email",
@@ -355,10 +429,17 @@ function sortByServiceOrder(a, b) {
   return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 }
 
+/*-------- get user assigned projects and environments -------- */
 export const userAssignedProjectsEnvironments = async (
   user_id,
   mask_secrets = true,
 ) => {
+  if (!user_id) {
+    throw {
+      message: "User ID is required",
+      statusCode: 400,
+    };
+  }
   const assignedEnvironments = await prisma.environmentEmployee.findMany({
     where: {
       user_id,
@@ -421,6 +502,9 @@ export const userAssignedProjectsEnvironments = async (
       },
     },
   });
+  if (!assignedEnvironments) {
+    return [];
+  }
 
   const projectMap = new Map();
 
