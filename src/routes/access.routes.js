@@ -11,28 +11,42 @@ import {
 } from "../controllers/access.controller.js";
 const router = express.Router();
 
-/* -------- SMS -------- */
-router.post("/send-sms", validateApiKey, sendSmsController);
+/* ------------------------ Messaging Routes ------------------------ */
 
-/* -------- EMAIL -------- */
-router.post("/send-email", validateApiKey, sendEmailController);
+// SMS
+router.post("/v1/messages/sms", validateApiKey, sendSmsController);
 
-/* -------- WHATSAPP -------- */
-router.post("/send-whatsapp", validateApiKey, sendWhatsAppController);
+// Email
+router.post("/v1/messages/email", validateApiKey, sendEmailController);
 
-/* -------- IBV -------- */
-router.post("/send-ibv", validateApiKey, sendIBVController);
+// Whatsapp
+router.post("/v1/messages/whatsapp", validateApiKey, sendWhatsAppController);
 
-/* -------- CREDIT SCORE -------- */
-router.post("/send-credit-score", validateApiKey, sendCreditScoreController);
+/* ------------------------ Verification Routes ------------------------ */
 
-/* -------- PAYMENT GATEWAY -------- */
-router.post("/send-payment", validateApiKey, sendPaymentGatewayController);
+// IBV
+router.post("/v1/verifications/ibv", validateApiKey, sendIBVController);
 
-/* -------- ACH -------- */
-router.post("/send-ach", validateApiKey, sendACHController);
+// Credit Score
+router.post(
+  "/v1/verifications/credit-score",
+  validateApiKey,
+  sendCreditScoreController,
+);
 
-/* -------- OTHERS -------- */
-router.post("/send-others", validateApiKey);
+/* ------------------------ Payment Routes ------------------------ */
+
+// Payment Gateway
+router.post(
+  "/v1/payment/gateway",
+  validateApiKey,
+  sendPaymentGatewayController,
+);
+
+// ACH
+router.post("/v1/payment/ach", validateApiKey, sendACHController);
+
+// Send others
+router.post("/v1/send-others", validateApiKey);
 
 export default router;

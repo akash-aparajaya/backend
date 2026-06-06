@@ -4,7 +4,7 @@ import projectRoutes from "./project.routes.js";
 import userRoutes from "./user.routes.js";
 import services from "./services.routes.js";
 import gitTokenRoutes from "./gitToken.routes.js";
-import access from "./access.routes.js";
+import clientAccessiblePoint from "./access.routes.js";
 import logger from "../utils/logger.js";
 const router = express.Router();
 
@@ -75,7 +75,7 @@ router.use("/services", services);
 /* -------- GIT TOKEN -------- */
 router.use("/token", gitTokenRoutes);
 
-/* -------- ACCESS -------- */
-router.get("/access-point", access);
+/* -------- CLIENT ACCESSIBLE POINT -------- */
+router.get("/services", clientAccessiblePoint);
 
 export default router;
