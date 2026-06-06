@@ -32,15 +32,17 @@ router.patch("/update-password", verifyToken, updatePassword);
 /* -------- logout -------- */
 router.get("/logout", logout);
 
-router.get("/setup-account/:token", validateSetupToken);
-
-router.post("/setup-account", completeSetup);
-
 /* -------- verify-sensitive-user-access -------- */
 router.post(
   "/verify-sensitive-user-access",
   verifyToken,
   userVerifySensitiveUserAccess,
 );
+
+/* -------- setup-account -------- */
+router.get("/setup-account/:token", validateSetupToken);
+
+/* -------- setup-password-and-passkey -------- */
+router.post("/setup-account", completeSetup);
 
 export default router;

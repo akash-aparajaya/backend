@@ -1,7 +1,4 @@
-export const accountActivatedTemplate = ({
-  userName,
-  loginUrl,
-}) => {
+export const accountActivatedTemplate = ({ userName, loginUrl }) => {
   return `
   <!DOCTYPE html>
   <html>

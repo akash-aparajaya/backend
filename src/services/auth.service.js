@@ -6,11 +6,10 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import crypto from "crypto";
-import { accountActivatedTemplate }
-  from "../templates/accountActivated.template.js";
-import { sendEmail }
-  from "../services/email.service.js";
+import { accountActivatedTemplate } from "../templates/accountActivated.template.js";
+import { sendEmail } from "../services/email.service.js";
 
+/* -------- LOGIN -------- */
 export const loginService = async ({ email, password }) => {
   const user = await prisma.user.findFirst({
     where: {
@@ -20,17 +19,24 @@ export const loginService = async ({ email, password }) => {
   });
 
   if (!user) {
-    throw new Error("email is incorrect");
+    throw {
+      message: "Invalid Email",
+      statusCode: 404,
+    };
   }
   if (!user.password) {
-    throw new Error(
-      "Account setup not completed"
-    );
+    throw {
+      message: "Account not activated",
+      statusCode: 400,
+    };
   }
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Password is incorrect");
+    throw {
+      message: "Invalid Password",
+      statusCode: 400,
+    };
   }
 
   // ✅ Generate tokens
@@ -54,9 +60,13 @@ export const loginService = async ({ email, password }) => {
   };
 };
 
+/* -------- REFRESH TOKEN -------- */
 export const refreshService = async ({ refreshToken }) => {
   if (!refreshToken) {
-    throw new Error("Refresh token required");
+    throw {
+      message: "Refresh token is required",
+      statusCode: 400,
+    };
   }
 
   let payload;
@@ -74,7 +84,10 @@ export const refreshService = async ({ refreshToken }) => {
   });
 
   if (!user || !user.refresh_token_hash) {
-    throw new Error("Session not found");
+    throw {
+      message: "Invalid or expired refresh token",
+      statusCode: 400,
+    };
   }
 
   const isMatch = await bcrypt.compare(refreshToken, user.refresh_token_hash);
@@ -113,7 +126,14 @@ export const refreshService = async ({ refreshToken }) => {
   };
 };
 
+/* -------- LOGOUT -------- */
 export const logoutService = async (userId) => {
+  if (!userId) {
+    throw {
+      message: "User ID is required",
+      statusCode: 400,
+    };
+  }
   await prisma.user.update({
     where: { public_id: userId },
     data: {
@@ -124,7 +144,7 @@ export const logoutService = async (userId) => {
   return { message: "Logged out successfully" };
 };
 
-export const forgotPasswordService = async ({ email }) => {
+export const forgotPasswordService = async (email) => {
   const user = await prisma.user.findFirst({
     where: {
       email,
@@ -133,7 +153,10 @@ export const forgotPasswordService = async ({ email }) => {
   });
 
   if (!user) {
-    throw new Error("User not found");
+    throw {
+      message: "Invalid Email",
+      statusCode: 400,
+    };
   }
 
   const reset_token = crypto.randomBytes(32).toString("hex");
@@ -153,6 +176,7 @@ export const forgotPasswordService = async ({ email }) => {
   // remaining code...
 };
 
+/* -------- RESET PASSWORD -------- */
 export const resetPasswordService = async (token, newPassword) => {
   const user = await prisma.user.findFirst({
     where: {
@@ -162,12 +186,16 @@ export const resetPasswordService = async (token, newPassword) => {
       },
     },
   });
+
   if (!user) {
-    console.log(user, "user");
-    throw new Error("Invalid or expired token");
+    throw {
+      message: "Invalid or expired token",
+      statusCode: 400,
+    };
   }
 
   let password = await bcrypt.hash(newPassword, 12);
+
   await prisma.user.update({
     where: { public_id: user.public_id },
     data: {
@@ -180,6 +208,7 @@ export const resetPasswordService = async (token, newPassword) => {
   return { message: "Password reset successful" };
 };
 
+/* -------- UPDATE PASSWORD -------- */
 export const updatePasswordService = async (user_id, newPassword) => {
   const user = await prisma.user.findFirst({
     where: {
@@ -188,8 +217,12 @@ export const updatePasswordService = async (user_id, newPassword) => {
       is_deleted: false,
     },
   });
+
   if (!user) {
-    throw new Error("Invalid or expired token");
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
   }
 
   let password = await bcrypt.hash(newPassword, 12);
@@ -203,6 +236,7 @@ export const updatePasswordService = async (user_id, newPassword) => {
   return { message: "Password reset successful" };
 };
 
+/* -------- USER VERIFY SENSITIVE USER ACCESS -------- */
 export const userVerification = async (user_id, passKey) => {
   const user = await prisma.user.findFirst({
     where: {
@@ -216,122 +250,87 @@ export const userVerification = async (user_id, passKey) => {
   return user ? true : false;
 };
 
-export const validateSetupTokenService =
-  async (token) => {
+/* -------- VALIDATE SETUP TOKEN -------- */
+export const validateSetupTokenService = async (token) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      reset_token: token,
+    },
+  });
 
-    const user =
-      await prisma.user.findFirst({
-        where: {
-          reset_token: token,
-        },
-      });
-
-    if (!user) {
-      return {
-        status: "configured",
-      };
-    }
-
-    if (
-      user.reset_token_expiry <
-      new Date()
-    ) {
-      return {
-        status: "expired",
-      };
-    }
-
+  if (!user) {
     return {
-      status: "valid",
-      email: user.email,
-      user_name: user.user_name,
+      status: "configured",
     };
-  };
+  }
 
-export const completeSetupService =
-  async ({
-    token,
-    password,
-    credentialPasskey,
-  }) => {
-
-    const user =
-      await prisma.user.findFirst({
-        where: {
-          reset_token: token,
-          reset_token_expiry: {
-            gte: new Date(),
-          },
-        },
-      });
-
-    if (!user) {
-      throw new Error(
-        "Invalid or expired token"
-      );
-    }
-
-    if (!/^\d{6}$/.test(credentialPasskey)) {
-      throw new Error(
-        "Credential passkey must contain exactly 6 digits"
-      );
-    }
-
-    const hashedPassword =
-      await bcrypt.hash(password, 12);
-
-    const hashedPasskey =
-      await bcrypt.hash(
-        credentialPasskey,
-        12
-      );
-
-    await prisma.user.update({
-      where: {
-        public_id: user.public_id,
-      },
-
-      data: {
-
-        password:
-          hashedPassword,
-
-        credential_passkey:
-          hashedPasskey,
-
-        reset_token:
-          null,
-
-        reset_token_expiry:
-          null,
-      },
-    });
-
-    /* -------------------------------
-   SEND ACCOUNT ACTIVATED EMAIL
--------------------------------- */
-
-    /* -------------------------------
-   SEND ACCOUNT ACTIVATED EMAIL
--------------------------------- */
-
-    await sendEmail({
-      to: user.email,
-
-      subject:
-        "Your Account Has Been Activated",
-
-      html:
-        accountActivatedTemplate({
-          userName:
-            user.user_name,
-
-          loginUrl:
-            `${process.env.FRONTEND_URL}/`,
-        }),
-    });
-
+  if (user.reset_token_expiry < new Date()) {
     return {
-      success: true,
+      status: "expired",
     };
+  }
+
+  return {
+    status: "valid",
+    email: user.email,
+    user_name: user.user_name,
   };
+};
+
+/* -------- COMPLETE SETUP PASSWORD AND PASSKEY -------- */
+export const completeSetupService = async ({
+  token,
+  password,
+  credentialPasskey,
+}) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      reset_token: token,
+      reset_token_expiry: {
+        gte: new Date(),
+      },
+    },
+  });
+
+  if (!user) {
+    throw {
+      message: "Invalid or expired token",
+      statusCode: 400,
+    };
+  }
+
+  if (!/^\d{6}$/.test(credentialPasskey)) {
+    throw {
+      message: "Invalid Passkey",
+      statusCode: 400,
+    };
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPasskey = await bcrypt.hash(credentialPasskey, 12);
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      password: hashedPassword,
+      credential_passkey: hashedPasskey,
+      reset_token: null,
+      reset_token_expiry: null,
+    },
+  });
+
+  await sendEmail({
+    to: user.email,
+    subject: "Your Account Has Been Activated",
+    html: accountActivatedTemplate({
+      userName: user.user_name,
+      loginUrl: `${process.env.FRONTEND_URL}/`,
+    }),
+  });
+
+  return {
+    success: true,
+  };
+};

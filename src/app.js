@@ -7,31 +7,12 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
-import {smsCron, emailCron} from  "./workers/cron.js";
+import { smsCron, emailCron } from "./workers/cron.js";
 import logger from "./utils/logger.js";
-
-
-// import { createBullBoard } from "@bull-board/api";
-// import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
-// import { ExpressAdapter } from "@bull-board/express";
-
-// //queue imports
-// import { smsQueue } from "./queues/sms.queue.js";
-// import { emailQueue } from "./queues/email.queue.js";
 
 dotenv.config();
 
 const app = express();
-
-// const serverAdapter = new ExpressAdapter();
-// serverAdapter.setBasePath("/admin/queues");
-
-// createBullBoard({
-//   queues: [new BullMQAdapter(emailQueue), new BullMQAdapter(smsQueue)],
-//   serverAdapter,
-// });
-
-// app.use("/admin/queues", serverAdapter.getRouter());
 
 /* ---------------- SECURITY ---------------- */
 app.use(helmet()); // Secure HTTP headers
@@ -51,8 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 
 /* ---------------- LOGGER ---------------- */
 
-  app.use(morgan("combined"));
-
+app.use(morgan("combined"));
 
 /* ---------------- RATE LIMIT ---------------- */
 const limiter = rateLimit({
@@ -97,7 +77,7 @@ export const initCronJobs = () => {
   emailCron();
   // whatsappCron();
   // cleanupCron();
- 
+
   logger.warn("✅ All cron jobs started");
 };
 

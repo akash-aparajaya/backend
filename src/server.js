@@ -15,10 +15,6 @@ const startServer = async () => {
     // 👉 START CRON FROM APP
     initCronJobs();
 
-    // // ✅ Redis
-    // await redisConnection.ping();
-    // logger.verbose("⚡ Redis connected");
-
     // ✅ Start server
     app.listen(PORT, () => {
       logger.verbose(`🚀 Server running on http://localhost:${PORT}`);

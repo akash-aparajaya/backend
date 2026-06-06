@@ -1,7 +1,5 @@
 import prisma from "../config/prisma.js";
 import cloudinary from "../config/cloudinary.js";
-import { generateApiKey } from "../utils/apiKey.js";
-import { SERVICE_CONFIG } from "../config/service.config.js";
 
 /* -------- create project -------- */
 export const createProjectService = async ({

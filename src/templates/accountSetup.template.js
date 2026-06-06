@@ -1,8 +1,4 @@
-export const accountSetupTemplate = ({
-  userName,
-  setupUrl,
-}) => {
-
+export const accountSetupTemplate = ({ userName, setupUrl }) => {
   return `
 <!DOCTYPE html>
 <html>

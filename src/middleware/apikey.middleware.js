@@ -10,10 +10,7 @@ export const validateApiKey = async (req, res, next) => {
     }
 
     // hash incoming key
-    const hashedKey = crypto
-      .createHash("sha256")
-      .update(rawKey)
-      .digest("hex");
+    const hashedKey = crypto.createHash("sha256").update(rawKey).digest("hex");
 
     // find in DB
     const apiKey = await prisma.apiKeys.findFirst({
@@ -25,12 +22,16 @@ export const validateApiKey = async (req, res, next) => {
     });
 
     if (!apiKey) {
-      return res.status(403).json({ success: false, message: "Invalid API key" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Invalid API key" });
     }
 
     // check expiry
     if (apiKey.expires_at && new Date() > apiKey.expires_at) {
-      return res.status(403).json({success: false, message: "API key expired" });
+      return res
+        .status(403)
+        .json({ success: false, message: "API key expired" });
     }
 
     // update last used
@@ -44,7 +45,6 @@ export const validateApiKey = async (req, res, next) => {
     req.project_id = apiKey.project_id;
     req.environment_id = apiKey.environment_id;
     req.mode = apiKey.mode;
-
 
     next();
   } catch (err) {

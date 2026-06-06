@@ -7,9 +7,9 @@ const logger = winston.createLogger({
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.printf(({ level, message, timestamp }) => {
-       return `● |${timestamp}| ${message}`
+          return `● |${timestamp}| ${message}`;
         }),
-        winston.format.colorize({ all: true }) // ✅ IMPORTANT (must be LAST)
+        winston.format.colorize({ all: true }), // ✅ IMPORTANT (must be LAST)
       ),
     }),
   ],
