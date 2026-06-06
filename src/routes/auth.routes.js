@@ -8,12 +8,9 @@ import {
   updatePassword,
   validateSetupToken,
   completeSetup,
-  userVerifySensitiveUserAccess
+  userVerifySensitiveUserAccess,
 } from "../controllers/auth.controller.js";
-
-import { createAdmin } from "../controllers/admin.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
-import { allowRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
@@ -35,26 +32,15 @@ router.patch("/update-password", verifyToken, updatePassword);
 /* -------- logout -------- */
 router.get("/logout", logout);
 
-/* -------- ADMIN -------- */
-router.post(
-  "/create-admin",
-  verifyToken,
-  allowRoles("SUPER_ADMIN"),
-  createAdmin,
-);
+router.get("/setup-account/:token", validateSetupToken);
 
-router.get(
-  "/setup-account/:token",
-  validateSetupToken
-);
-
-router.post(
-  "/setup-account",
-  completeSetup
-);
+router.post("/setup-account", completeSetup);
 
 /* -------- verify-sensitive-user-access -------- */
-router.post("/verify-sensitive-user-access", verifyToken, userVerifySensitiveUserAccess);
-
+router.post(
+  "/verify-sensitive-user-access",
+  verifyToken,
+  userVerifySensitiveUserAccess,
+);
 
 export default router;
