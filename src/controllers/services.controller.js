@@ -1,7 +1,5 @@
 import { successResponse, errorResponse } from "../utils/response.js";
 import * as providersService from "../services/providers.service.js";
-import bcrypt from "bcrypt";
-import prisma from "../config/prisma.js";
 import { unlockServiceCredentials } from "../services/providers.service.js";
 
 /* -------- get all Services -------- */
@@ -119,48 +117,30 @@ export const revealProviderCredentials = async (req, res) => {
 };
 
 /* -------- unlock service credentials -------- */
-export const unlockServiceController = async (req, res) => {
-  try {
-    const { environment_id, service_type_id, credentialPasskey } = req.body;
+export const unlockServiceController =
+  async (req, res) => {
 
-    const user = await prisma.user.findUnique({
-      where: {
-        public_id: req.user.id,
-      },
-    });
+    try {
+      const {
+        environment_id,
+        service_type_id,
+        credentialPasskey,
+      } = req.body;
 
-    if (!user) {
-      return errorResponse(res, "User not found");
+      const data = await unlockServiceCredentials({
+        environmentId: environment_id,
+        serviceId: service_type_id,
+      });
+
+      return successResponse(
+        res,
+        {
+          expiresIn: 60,
+          ...data,
+        },
+        "Credentials unlocked",
+      );
+    } catch (error) {
+      return errorResponse(res, "Failed to unlock credentials", error.message);
     }
-
-    if (!user.credential_passkey) {
-      return errorResponse(res, "Credential passkey not configured");
-    }
-
-    const isValid = await bcrypt.compare(
-      credentialPasskey,
-      user.credential_passkey,
-    );
-
-    if (!isValid) {
-      return errorResponse(res, "Invalid passkey");
-    }
-
-    const data = await unlockServiceCredentials({
-      environmentId: environment_id,
-      serviceId: service_type_id,
-    });
-
-    return successResponse(
-      res,
-      {
-        expiresIn: 60,
-        ...data,
-      },
-      "Credentials unlocked",
-    );
-  } catch (error) {
-    console.error("UNLOCK ERROR >>>", error);
-    return errorResponse(res, "Failed to unlock credentials", error.message);
-  }
-};
+  };

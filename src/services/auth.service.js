@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { accountActivatedTemplate } from "../templates/accountActivated.template.js";
 import { sendEmail } from "../services/email.service.js";
 
+
 /* -------- LOGIN -------- */
 export const loginService = async ({ email, password }) => {
   const user = await prisma.user.findFirst({
@@ -237,17 +238,37 @@ export const updatePasswordService = async (user_id, newPassword) => {
 };
 
 /* -------- USER VERIFY SENSITIVE USER ACCESS -------- */
-export const userVerification = async (user_id, passKey) => {
+export const userVerification = async (
+  user_id,
+  passKey
+) => {
+
   const user = await prisma.user.findFirst({
     where: {
       public_id: user_id,
-      credential_passkey: passKey,
       is_active: true,
       is_deleted: false,
     },
   });
 
-  return user ? true : false;
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.credential_passkey) {
+    throw new Error("Credential passkey not configured");
+  }
+
+  const isValid = await bcrypt.compare(
+    passKey,
+    user.credential_passkey
+  );
+
+  if (!isValid) {
+    throw new Error("Invalid passkey");
+  }
+
+  return true;
 };
 
 /* -------- VALIDATE SETUP TOKEN -------- */
