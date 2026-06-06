@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import prisma from "../config/prisma.js";
-import e from "express";
 
+/* -------- CREATE API KEY -------- */
 export const createApiKeyService = async (
   project_id,
   environment_id,
@@ -21,7 +21,10 @@ export const createApiKeyService = async (
   });
 
   if (existingKey) {
-    throw new Error(`${mode} API key already exists`);
+    throw {
+      message: "API key already exists",
+      statusCode: 400,
+    };
   }
 
   // generate unpredictable key
@@ -54,18 +57,15 @@ export const createApiKeyService = async (
     },
   });
 
-
-
-
   return { ...createdApiKey, key: apiKey }; // return createdApiKey;
 };
 
+/* -------- REGENERATE API KEY -------- */
 export const regenerateApiKeyService = async (
   apiKeyId,
   note,
-  expires_in_days
+  expires_in_days,
 ) => {
-
   const existingApiKey = await prisma.apiKeys.findFirst({
     where: {
       public_id: apiKeyId,
@@ -74,22 +74,20 @@ export const regenerateApiKeyService = async (
   });
 
   if (!existingApiKey) {
-    throw new Error("API key not found");
+    throw {
+      message: "API key not found",
+      statusCode: 404,
+    };
   }
 
   const randomPrefix = crypto.randomBytes(3).toString("hex");
   const randomKey = crypto.randomBytes(32).toString("hex");
   const newRawKey = `${randomPrefix}_${randomKey}`;
 
-  const hashedKey = crypto
-    .createHash("sha256")
-    .update(newRawKey)
-    .digest("hex");
+  const hashedKey = crypto.createHash("sha256").update(newRawKey).digest("hex");
 
   const expires_at = expires_in_days
-    ? new Date(
-      Date.now() + expires_in_days * 86400000
-    )
+    ? new Date(Date.now() + expires_in_days * 86400000)
     : null;
 
   const updatedApiKey = await prisma.apiKeys.update({
@@ -111,19 +109,28 @@ export const regenerateApiKeyService = async (
   };
 };
 
-export const getApiKeysService = async () => {
+/* -------- GET API KEYS -------- */
+export const getApiKeysService = async (project_id) => {
   const apiKeys = await prisma.apiKeys.findMany({
     where: {
+      project_id,
       is_deleted: false,
     },
     orderBy: {
       created_at: "desc",
     },
   });
+  if (!apiKeys) {
+    throw {
+      message: "API keys not found for this project",
+      statusCode: 400,
+    };
+  }
 
   return apiKeys;
 };
 
+/* -------- DELETE API KEY -------- */
 export const deleteApiKeyService = async (apiKeyId) => {
   const existingApiKey = await prisma.apiKeys.findFirst({
     where: {
@@ -133,10 +140,13 @@ export const deleteApiKeyService = async (apiKeyId) => {
   });
 
   if (!existingApiKey) {
-    throw new Error("API key not found");
+    throw {
+      message: "API key not found",
+      statusCode: 404,
+    };
   }
 
-  await prisma.apiKeys.updateMany({
+  await prisma.apiKeys.update({
     where: {
       public_id: apiKeyId,
     },
