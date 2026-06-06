@@ -10,7 +10,10 @@ export const createProjectService = async ({
   image_url,
 }) => {
   if (!project_name) {
-    throw new Error("Project name is required");
+    throw {
+      message: "Project name is required",
+      statusCode: 400,
+    };
   }
 
   let finalImageUrl = null;
@@ -33,6 +36,13 @@ export const createProjectService = async ({
       user_id: userId,
     },
   });
+
+  if (!project) {
+    throw {
+      message: "Failed to create project",
+      statusCode: 500,
+    };
+  }
 
   return {
     project: {
@@ -73,6 +83,13 @@ export const getAllProjects = async () => {
     },
   });
 
+  if (!projectData) {
+    throw {
+      message: "Failed to retrieve projects",
+      statusCode: 500,
+    };
+  }
+
   return projectData.map((project) => ({
     public_id: project?.public_id,
     project_name: project?.project_name,
@@ -88,10 +105,17 @@ export const getAllProjects = async () => {
 
 /* -------- update project status -------- */
 export const updateProjectStatusService = async (id, isActive) => {
-  return await prisma.project.update({
+  const result = await prisma.project.update({
     where: { public_id: id },
     data: { is_active: isActive },
   });
+  if (!result) {
+    throw {
+      message: "Failed to update project status",
+      statusCode: 500,
+    };
+  }
+  return result;
 };
 
 /* -------- get project by id -------- */
@@ -120,6 +144,12 @@ export const getProjectById = async (id) => {
     },
   });
 
+  if (!project) {
+    throw {
+      message: "Failed to retrieve project",
+      statusCode: 500,
+    };
+  }
   return {
     public_id: project?.public_id,
     project_name: project?.project_name,
@@ -141,7 +171,10 @@ export const createEnvironmentService = async ({
   environment_name,
 }) => {
   if (!environment_name) {
-    throw new Error("Environment name is required");
+    throw {
+      message: "Environment name is required",
+      statusCode: 400,
+    };
   }
 
   const environment = await prisma.environment.create({
@@ -152,17 +185,19 @@ export const createEnvironmentService = async ({
     },
   });
 
+  if (!environment) {
+    throw {
+      message: "Failed to create environment",
+      statusCode: 500,
+    };
+  }
+
   return environment;
 };
 
 export const updateProjectService = async (
   id,
-  {
-    project_name,
-    project_description,
-    isActive,
-    image_url,
-  },
+  { project_name, project_description, isActive, image_url },
 ) => {
   let finalImageUrl;
 
@@ -196,11 +231,18 @@ export const updateProjectService = async (
     },
   });
 
+  if (!updatedProject) {
+    throw {
+      message: "Failed to update project",
+      statusCode: 500,
+    };
+  }
+
   return updatedProject;
 };
 
 export const deleteProjectService = async (id) => {
-  return await prisma.project.update({
+  const result = await prisma.project.update({
     where: {
       public_id: id,
     },
@@ -209,6 +251,15 @@ export const deleteProjectService = async (id) => {
       is_deleted: true,
     },
   });
+
+  if (!result) {
+    throw {
+      message: "Failed to delete project",
+      statusCode: 500,
+    };
+  }
+
+  return result;
 };
 
 /* -------- get environments by project id -------- */
@@ -231,16 +282,19 @@ export const getEnvironmentsByProjectIdService = async (projectId) => {
     },
   });
 
+  if (!environments) {
+    throw {
+      message: "Failed to retrieve environments",
+      statusCode: 500,
+    };
+  }
+
   return environments;
 };
 
 /* -------- update environment by id -------- */
-export const updateEnvironmentByIdService = async (
-  id,
-  data
-) => {
-
-  return await prisma.environment.update({
+export const updateEnvironmentByIdService = async (id, data) => {
+  const result = await prisma.environment.update({
     where: {
       public_id: id,
     },
@@ -255,30 +309,36 @@ export const updateEnvironmentByIdService = async (
       }),
     },
   });
+
+  if (!result) {
+    throw {
+      message: "Failed to update environment",
+      statusCode: 500,
+    };
+  }
+
+  return result;
 };
 
 /* -------- delete environment by id -------- */
-export const deleteEnvironmentByIdService = async (
-  id
-) => {
-
+export const deleteEnvironmentByIdService = async (id) => {
   // CHECK PROVIDERS EXIST
-  const providers =
-    await prisma.environmentServiceProvider.count({
-      where: {
-        environment_id: id,
-        is_active: true,
-      },
-    });
+  const providers = await prisma.environmentServiceProvider.count({
+    where: {
+      environment_id: id,
+      is_active: true,
+    },
+  });
 
   if (providers > 0) {
-    throw new Error(
-      "Cannot delete environment with active providers"
-    );
+    throw {
+      message: "Cannot delete environment with active providers",
+      statusCode: 400,
+    };
   }
 
   // SOFT DELETE
-  return await prisma.environment.update({
+  const result = await prisma.environment.update({
     where: {
       public_id: id,
     },
@@ -286,49 +346,60 @@ export const deleteEnvironmentByIdService = async (
       is_deleted: true,
     },
   });
+
+  if (!result) {
+    throw {
+      message: "Failed to delete environment",
+      statusCode: 500,
+    };
+  }
+
+  return result;
 };
 
-export const cloneEnvironmentByIdService = async (
-  id,
-  environment_name
-) => {
-
+/* -------- clone environment by id -------- */
+export const cloneEnvironmentByIdService = async (id, environment_name) => {
   // GET SOURCE ENVIRONMENT
-  const sourceEnvironment =
-    await prisma.environment.findUnique({
-      where: {
-        public_id: id,
-      },
-    });
+  const sourceEnvironment = await prisma.environment.findUnique({
+    where: {
+      public_id: id,
+    },
+  });
 
   if (!sourceEnvironment) {
-    throw new Error("Environment not found");
+    throw {
+      message: "Failed to clone environment",
+      statusCode: 500,
+    };
   }
 
   // CREATE NEW ENVIRONMENT
-  const clonedEnvironment =
-    await prisma.environment.create({
-      data: {
-        project_id: sourceEnvironment.project_id,
-        environment_name,
-        is_active: true,
-      },
-    });
+  const clonedEnvironment = await prisma.environment.create({
+    data: {
+      project_id: sourceEnvironment.project_id,
+      environment_name,
+      is_active: true,
+    },
+  });
 
   // GET ALL PROVIDERS
-  const providers =
-    await prisma.environmentServiceProvider.findMany({
-      where: {
-        environment_id: sourceEnvironment.public_id,
-      },
-    });
+  const providers = await prisma.environmentServiceProvider.findMany({
+    where: {
+      environment_id: sourceEnvironment.public_id,
+    },
+  });
+
+  if (!providers) {
+    throw {
+      message: "Failed to clone environment",
+      statusCode: 500,
+    };
+  }
 
   // CLONE PROVIDERS
   for (const provider of providers) {
-
     const credentials =
-      typeof provider.credentials === "object" &&
-        provider.credentials !== null
+      typeof provider.credentials === "object" && provider.credentials !== null
         ? { ...provider.credentials }
         : {};
 
@@ -339,25 +410,19 @@ export const cloneEnvironmentByIdService = async (
 
     await prisma.environmentServiceProvider.create({
       data: {
-        environment_id:
-          clonedEnvironment.public_id,
+        environment_id: clonedEnvironment.public_id,
 
-        service_type_id:
-          provider.service_type_id,
+        service_type_id: provider.service_type_id,
 
-        provider_id:
-          provider.provider_id,
+        provider_id: provider.provider_id,
 
-        provider_name:
-          provider.provider_name,
+        provider_name: provider.provider_name,
 
         credentials,
 
-        mode:
-          provider.mode,
+        mode: provider.mode,
 
-        endpoint:
-          provider.endpoint,
+        endpoint: provider.endpoint,
 
         is_active: true,
       },
@@ -375,7 +440,10 @@ export const assignUnassignEmployeeToEnvironmentService = async (
   status,
 ) => {
   if (!Array.isArray(userIds) || userIds.length === 0) {
-    throw new Error("userIds must be a non-empty array");
+    throw {
+      message: "User ID array is required and cannot be empty",
+      statusCode: 400,
+    };
   }
 
   const updatedUsers = [];
@@ -427,7 +495,6 @@ export const getAssignedAndUnassignedEmployeesService = async (
   project_id,
   environment_id,
 ) => {
-  console.log(project_id, environment_id, "getAssignedAndUnassignedEmployees");
   // Get all employees from user table
   const employees = await prisma.user.findMany({
     where: {
@@ -443,7 +510,10 @@ export const getAssignedAndUnassignedEmployeesService = async (
   });
 
   if (!employees || employees.length === 0) {
-    throw new Error("No employees found");
+    throw {
+      message: "No employees found",
+      statusCode: 404,
+    };
   }
 
   // Get assigned employees from environment table
@@ -472,7 +542,6 @@ export const getAssignedAndUnassignedEmployeesService = async (
   const unassignedEmployees = employees.filter(
     (employee) => !assignedUserIds.includes(employee.public_id),
   );
-  // console.log(assignedEmployees, unassignedEmployees);
 
   return {
     assignedEmployees,
@@ -480,6 +549,7 @@ export const getAssignedAndUnassignedEmployeesService = async (
   };
 };
 
+/* -------- GET ALL PROJECTS AND ENVIRONMENTS -------- */
 export const getAllProjectsAndEnvironmentsService = async () => {
   const projects = await prisma.project.findMany({
     where: { is_active: true },
@@ -513,32 +583,33 @@ export const getAllProjectsAndEnvironmentsService = async () => {
     }));
 };
 
+/* -------- ASSIGN ENVIRONMENT TO EMPLOYEE -------- */
 export const assignEnvironmentToEmployeeService = async (data) => {
   if (!data || data.length === 0 || !Array.isArray(data)) {
-    throw new Error("Data array is required and cannot be empty");
+    throw {
+      message: "Data array is required and cannot be empty",
+      statusCode: 400,
+    };
   }
   const result = await prisma.environmentEmployee.createMany({ data });
   return result;
 };
 
-export const reorderProvidersService =
-  async (providers) => {
+/* -------- REORDER PROVIDERS -------- */
+export const reorderProvidersService = async (providers) => {
+  const updates = providers.map((provider, index) => {
+    return prisma.environmentServiceProvider.update({
+      where: {
+        public_id: provider.public_id,
+      },
 
-    const updates =
-      providers.map((provider, index) => {
+      data: {
+        sort_order: index + 1,
+      },
+    });
+  });
 
-        return prisma.environmentServiceProvider.update({
-          where: {
-            public_id: provider.public_id,
-          },
+  await prisma.$transaction(updates);
 
-          data: {
-            sort_order: index + 1,
-          },
-        });
-      });
-
-    await prisma.$transaction(updates);
-
-    return true;
-  };
+  return true;
+};

@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { smsWorker } from "../workers/sms.worker.js";
 import { emailWorker } from "../workers/email.worker.js";
 // import { whatsappWorker } from "../workers/whatsapp.worker.js";
- import { cleanupWorker } from "../workers/cleanup.worker.js";
+import { cleanupWorker } from "../workers/cleanup.worker.js";
 
 const cronFlags = {
   sms: false,
@@ -59,23 +59,23 @@ export const emailCron = () => {
 // WHATSAPP CRON (Future)
 // =====================================================
 
-// export const whatsappCron = () => {
-//   cron.schedule("* * * * * *", async () => {
-//     if (cronFlags.whatsapp) return;
+export const whatsappCron = () => {
+  cron.schedule("* * * * * *", async () => {
+    if (cronFlags.whatsapp) return;
 
-//     cronFlags.whatsapp = true;
+    cronFlags.whatsapp = true;
 
-//     try {
-//       await whatsappWorker();
-//     } catch (error) {
-//       console.error("WhatsApp Cron Error:", error);
-//     } finally {
-//       cronFlags.whatsapp = false;
-//     }
-//   });
+    try {
+      await whatsappWorker();
+    } catch (error) {
+      console.error("WhatsApp Cron Error:", error);
+    } finally {
+      cronFlags.whatsapp = false;
+    }
+  });
 
-//   console.log("✅ WhatsApp Cron Started");
-// };
+  console.log("✅ WhatsApp Cron Started");
+};
 
 // =====================================================
 // CLEANUP CRON (Daily Midnight)

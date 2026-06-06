@@ -1,7 +1,5 @@
 import express from "express";
 import {
-  sendSmsController,
-  sendEmailController,
   getProvidersByServiceIdController,
   getAllServicesController,
   getProviderByIdController,
@@ -10,56 +8,83 @@ import {
   deleteProviderController,
   getProvidersByEnvironmentIdController,
   unlockServiceController,
-
-  revealProviderCredentials
+  revealProviderCredentials,
 } from "../controllers/services.controller.js";
-import { validateApiKey } from "../middleware/apikey.middleware.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { allowRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
+
 /* -------- All Services -------- */
-router.get("/get-all-services", getAllServicesController);
+router.get(
+  "/get-all-services",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  getAllServicesController,
+);
 
 /* -------- get providers by environment id -------- */
 router.get(
   "/get-all-providers-by-environment/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
   getProvidersByEnvironmentIdController,
 );
 
 /* -------- get providers by service id -------- */
 router.get(
   "/get-providers-by-service-id/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
   getProvidersByServiceIdController,
 );
 
 /* -------- get provider by id -------- */
-router.get("/get-provider-by-id/:id", getProviderByIdController);
+router.get(
+  "/get-provider-by-id/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  getProviderByIdController,
+);
 
 /* -------- create provider based on project-services -------- */
-router.post("/create-provider", createProviderController);
+router.post(
+  "/create-provider",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  createProviderController,
+);
 
 /* -------- update provider -------- */
-router.patch("/update-provider/:id", updateProviderController);
+router.patch(
+  "/update-provider/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  updateProviderController,
+);
 
 /* -------- delete provider -------- */
-router.patch("/delete-provider/:id", deleteProviderController);
+router.patch(
+  "/delete-provider/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  deleteProviderController,
+);
 
-router.get("/reveal-provider-credentials/:id", revealProviderCredentials);
+/* -------- reveal provider credentials -------- */
+router.get(
+  "/reveal-provider-credentials/:id",
+  verifyToken,
+  allowRoles(["SUPER_ADMIN", "ADMIN", "USER"]),
+  revealProviderCredentials,
+);
 
-/* -------- SMS -------- */
-router.post("/send-sms", validateApiKey, sendSmsController);
-
-/* -------- EMAIL -------- */
-router.post("/send-email", validateApiKey, sendEmailController);
-
-// /* -------- WHATSAPP -------- */
-// router.post("/send-whatsapp", validateApiKey, sendWhatsAppController);
-
-// /* -------- Unmask- service-------- */
+/* -------- unlock service -------- */
 router.post(
   "/unlock-service",
   verifyToken,
-  unlockServiceController
+  allowRoles(["SUPER_ADMIN", "ADMIN"]),
+  unlockServiceController,
 );
 
 export default router;

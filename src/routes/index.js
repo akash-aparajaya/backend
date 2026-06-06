@@ -4,8 +4,8 @@ import projectRoutes from "./project.routes.js";
 import userRoutes from "./user.routes.js";
 import services from "./services.routes.js";
 import gitTokenRoutes from "./gitToken.routes.js";
+import access from "./access.routes.js";
 import logger from "../utils/logger.js";
-// import { redisConnection } from "../config/redis.js";
 const router = express.Router();
 
 //* -------- LOGGING -------- *
@@ -72,6 +72,10 @@ router.use("/project", projectRoutes);
 /* -------- SERVICES -------- */
 router.use("/services", services);
 
+/* -------- GIT TOKEN -------- */
 router.use("/token", gitTokenRoutes);
+
+/* -------- ACCESS -------- */
+router.get("/access-point", access);
 
 export default router;
