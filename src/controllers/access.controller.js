@@ -77,6 +77,7 @@ export const sendSmsController = async (req, res) => {
     });
   }
 };
+
 /* -------- send email queue controller -------- */
 export const sendEmailController = async (req, res) => {
   try {
@@ -205,4 +206,36 @@ export const sendWhatsAppController = async (req, res) => {
       message: error.message,
     });
   }
+};
+
+/* -------- IBV controller -------- */
+export const sendIBVController = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "IBV queued successfully",
+  });
+};
+
+/* -------- Credit Score controller -------- */
+export const sendCreditScoreController = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Credit Score queued successfully",
+  });
+};
+
+/* -------- Payment Gateway controller -------- */
+export const sendPaymentGatewayController = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Payment Gateway queued successfully",
+  });
+};
+
+/* -------- ACH controller -------- */
+export const sendACHController = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "ACH queued successfully",
+  });
 };
