@@ -132,6 +132,8 @@ model User {
 
   reset_token_expiry DateTime?
 
+  reset_token_type String?
+
   refresh_token_hash String?
 
   refresh_token_expires_at DateTime?

@@ -8,7 +8,9 @@ import {
 import crypto from "crypto";
 import { accountActivatedTemplate } from "../templates/accountActivated.template.js";
 import { sendEmail } from "../services/email.service.js";
-
+import { passkeyResetTemplate } from "../templates/passkeyReset.template.js";
+import { passwordResetTemplate }
+  from "../templates/passwordReset.template.js";
 
 /* -------- LOGIN -------- */
 export const loginService = async ({ email, password }) => {
@@ -145,38 +147,6 @@ export const logoutService = async (userId) => {
   return { message: "Logged out successfully" };
 };
 
-export const forgotPasswordService = async (email) => {
-  const user = await prisma.user.findFirst({
-    where: {
-      email,
-      is_deleted: false,
-    },
-  });
-
-  if (!user) {
-    throw {
-      message: "Invalid Email",
-      statusCode: 400,
-    };
-  }
-
-  const reset_token = crypto.randomBytes(32).toString("hex");
-
-  const reset_token_expiry = new Date(Date.now() + 60 * 60 * 1000);
-
-  await prisma.user.update({
-    where: {
-      public_id: user.public_id,
-    },
-    data: {
-      reset_token: reset_token,
-      reset_token_expiry: reset_token_expiry,
-    },
-  });
-
-  // remaining code...
-};
-
 /* -------- RESET PASSWORD -------- */
 export const resetPasswordService = async (token, newPassword) => {
   const user = await prisma.user.findFirst({
@@ -185,6 +155,7 @@ export const resetPasswordService = async (token, newPassword) => {
       reset_token_expiry: {
         gte: new Date(),
       },
+      reset_token_type: "PASSWORD_RESET"
     },
   });
 
@@ -203,6 +174,7 @@ export const resetPasswordService = async (token, newPassword) => {
       password: password,
       reset_token: null,
       reset_token_expiry: null,
+      reset_token_type: null,
     },
   });
 
@@ -276,6 +248,7 @@ export const validateSetupTokenService = async (token) => {
   const user = await prisma.user.findFirst({
     where: {
       reset_token: token,
+      reset_token_type: "SETUP_ACCOUNT",
     },
   });
 
@@ -310,6 +283,7 @@ export const completeSetupService = async ({
       reset_token_expiry: {
         gte: new Date(),
       },
+      reset_token_type: "SETUP_ACCOUNT",
     },
   });
 
@@ -339,6 +313,7 @@ export const completeSetupService = async ({
       credential_passkey: hashedPasskey,
       reset_token: null,
       reset_token_expiry: null,
+      reset_token_type: null,
     },
   });
 
@@ -434,4 +409,352 @@ export const updateCredentialPasskeyService = async (
   return {
     success: true,
   };
+};
+
+// Validate password or passkey before update
+export const validateUserSecretService = async (
+  user_id,
+  value,
+  type
+) => {
+
+  const user = await prisma.user.findFirst({
+    where: {
+      public_id: user_id,
+      is_active: true,
+      is_deleted: false,
+    },
+    select: {
+      password: true,
+      credential_passkey: true,
+    },
+  });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  if (
+    type !== "password" &&
+    type !== "passkey"
+  ) {
+    throw {
+      message: "Invalid validation type",
+      statusCode: 400,
+    };
+  }
+
+  const hash =
+    type === "password"
+      ? user.password
+      : user.credential_passkey;
+
+  const isValid = await bcrypt.compare(
+    value,
+    hash
+  );
+
+  if (!isValid) {
+    throw {
+      message:
+        type === "password"
+          ? "Current password is incorrect"
+          : "Current passkey is incorrect",
+      statusCode: 400,
+    };
+  }
+
+  return true;
+};
+
+
+// -------- FORGOT PASSKEY --------
+export const forgotPasskeyService = async (
+  userId
+) => {
+
+  const user = await prisma.user.findFirst({
+    where: {
+      public_id: userId,
+      is_deleted: false,
+    },
+  });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  const token =
+    crypto.randomBytes(32).toString("hex");
+
+  const expiry =
+    new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      reset_token: token,
+      reset_token_expiry: expiry,
+      reset_token_type: "PASSKEY_RESET",
+    },
+  });
+
+  const resetUrl =
+    `${process.env.FRONTEND_URL}/reset-passkey/${token}`;
+
+  await sendEmail({
+    to: user.email,
+    subject: "Reset Credential Passkey",
+    html: passkeyResetTemplate({
+      userName: user.user_name,
+      resetUrl,
+    }),
+  });
+
+  return true;
+};
+
+
+// -------- RESET PASSKEY --------
+export const resetPasskeyService = async (
+  token,
+  passkey
+) => {
+
+  const user =
+    await prisma.user.findFirst({
+      where: {
+        reset_token: token,
+        reset_token_type:
+          "PASSKEY_RESET",
+        reset_token_expiry: {
+          gte: new Date(),
+        },
+      },
+    });
+
+  if (!user) {
+    throw {
+      message:
+        "Invalid or expired token",
+      statusCode: 400,
+    };
+  }
+
+  if (!/^\d{6}$/.test(passkey)) {
+    throw {
+      message:
+        "Passkey must be exactly 6 digits",
+      statusCode: 400,
+    };
+  }
+
+  const hashedPasskey =
+    await bcrypt.hash(passkey, 12);
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      credential_passkey:
+        hashedPasskey,
+
+      reset_token: null,
+      reset_token_expiry: null,
+      reset_token_type: null,
+    },
+  });
+
+  return true;
+};
+
+// -------- FORGOT PASSWORD - used inside the profile page to find whether the user is already logged in or not --------
+export const forgotPasswordSelfService = async (
+  userId
+) => {
+
+  const user =
+    await prisma.user.findFirst({
+      where: {
+        public_id: userId,
+        is_deleted: false,
+      },
+    });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  const token =
+    crypto.randomBytes(32).toString("hex");
+
+  const expiry =
+    new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      reset_token: token,
+      reset_token_expiry: expiry,
+      reset_token_type: "PASSWORD_RESET",
+    },
+  });
+
+  const resetUrl =
+    `${process.env.FRONTEND_URL}/forgot-password/${token}`;
+
+  const emailRes =
+    await sendEmail({
+      to: user.email,
+      subject: "Reset Password",
+      html: passwordResetTemplate({
+        userName: user.user_name,
+        resetUrl,
+      }),
+    });
+
+  if (!emailRes.success) {
+    throw {
+      message: "Failed to send reset email",
+      statusCode: 500,
+    };
+  }
+
+  return true;
+};
+
+// -------- VALIDATE PASSWORD RESET TOKEN --------
+export const validatePasswordResetTokenService =
+  async (token) => {
+
+    const user =
+      await prisma.user.findFirst({
+        where: {
+          reset_token: token,
+          reset_token_type:
+            "PASSWORD_RESET",
+        },
+      });
+
+    if (!user) {
+      return {
+        status: "expired",
+      };
+    }
+
+    if (
+      user.reset_token_expiry <
+      new Date()
+    ) {
+      return {
+        status: "expired",
+      };
+    }
+
+    return {
+      status: "valid",
+    };
+  };
+
+// -------- VALIDATE PASSKEY RESET TOKEN --------
+export const validatePasskeyResetTokenService =
+  async (token) => {
+
+    const user =
+      await prisma.user.findFirst({
+        where: {
+          reset_token: token,
+          reset_token_type:
+            "PASSKEY_RESET",
+        },
+      });
+
+    if (!user) {
+      return {
+        status: "expired",
+      };
+    }
+
+    if (
+      user.reset_token_expiry <
+      new Date()
+    ) {
+      return {
+        status: "expired",
+      };
+    }
+
+    return {
+      status: "valid",
+    };
+  };
+
+// -------- FORGOT PASSWORD --------
+export const forgotPasswordService = async (
+  email
+) => {
+
+  const user =
+    await prisma.user.findFirst({
+      where: {
+        email,
+        is_deleted: false,
+      },
+    });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  const token =
+    crypto.randomBytes(32).toString("hex");
+
+  const expiry =
+    new Date(
+      Date.now() + 60 * 60 * 1000
+    );
+
+  await prisma.user.update({
+    where: {
+      public_id: user.public_id,
+    },
+    data: {
+      reset_token: token,
+      reset_token_expiry: expiry,
+      reset_token_type:
+        "PASSWORD_RESET",
+    },
+  });
+
+  const resetUrl =
+    `${process.env.FRONTEND_URL}/forgot-password/${token}`;
+
+  await sendEmail({
+    to: user.email,
+    subject: "Reset Password",
+    html: passwordResetTemplate({
+      userName:
+        user.user_name,
+      resetUrl,
+    }),
+  });
+
+  return true;
 };

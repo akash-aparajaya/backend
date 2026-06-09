@@ -2,14 +2,16 @@ import {
   loginService,
   refreshService,
   logoutService,
-  forgotPasswordService,
   resetPasswordService,
   updatePasswordService,
   validateSetupTokenService,
   completeSetupService,
   userVerification,
   updateCredentialPasskeyService,
-
+  validateUserSecretService, forgotPasskeyService,
+  resetPasskeyService, forgotPasswordSelfService,
+  validatePasswordResetTokenService,
+  validatePasskeyResetTokenService, forgotPasswordService,
 } from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
@@ -54,22 +56,6 @@ export const logout = async (req, res) => {
   }
 };
 
-/* -------- FORGOT PASSWORD -------- */
-export const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    await forgotPasswordService(email);
-    return successResponse(
-      res,
-      null,
-      "Password reset link sent successfully",
-      200,
-    );
-  } catch (err) {
-    return errorResponse(res, err.message, null, err.statusCode || 500);
-  }
-};
-
 /* -------- RESET PASSWORD -------- */
 export const resetPassword = async (req, res) => {
   try {
@@ -86,7 +72,6 @@ export const updatePassword = async (req, res) => {
   try {
     const { password } = req.body;
     const userId = req.user.id;
-    console.log(userId, password);
     await updatePasswordService(userId, password);
     return successResponse(res, null, "Password changed successfully", 201);
   } catch (error) {
@@ -165,3 +150,236 @@ export const updateCredentialPasskey = async (
 
   }
 };
+
+// Validate current password before password update
+// Common validation endpoint
+export const validateUserSecret = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const {
+      value,
+      type,
+    } = req.body;
+
+    await validateUserSecretService(
+      req.user.id,
+      value,
+      type
+    );
+
+    return successResponse(
+      res,
+      true,
+      "Validation successful",
+      200
+    );
+
+  } catch (err) {
+
+    return errorResponse(
+      res,
+      err.message,
+      null,
+      err.statusCode || 500
+    );
+
+  }
+
+};
+
+// -------- FORGOT PASSKEY --------
+export const forgotPasskey = async (
+  req,
+  res
+) => {
+
+  try {
+
+    await forgotPasskeyService(
+      req.user.id
+    );
+
+    return successResponse(
+      res,
+      null,
+      "Credential passkey reset link sent successfully",
+      200
+    );
+
+  } catch (err) {
+
+    return errorResponse(
+      res,
+      err.message,
+      null,
+      err.statusCode || 500
+    );
+
+  }
+
+};
+
+// -------- RESET PASSKEY --------
+export const resetPasskey = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const {
+      token,
+      passkey,
+    } = req.body;
+
+    await resetPasskeyService(
+      token,
+      passkey
+    );
+
+    return successResponse(
+      res,
+      null,
+      "Passkey reset successful",
+      200
+    );
+
+  } catch (err) {
+
+    return errorResponse(
+      res,
+      err.message,
+      null,
+      err.statusCode || 500
+    );
+
+  }
+
+};
+
+// -------- FORGOT PASSWORD - used in the profile page to find whether the user is already logged in or not --------
+export const forgotPasswordSelf = async (
+  req,
+  res
+) => {
+
+  try {
+
+    await forgotPasswordSelfService(
+      req.user.id
+    );
+
+    return successResponse(
+      res,
+      null,
+      "Password reset link sent successfully",
+      200
+    );
+
+  } catch (err) {
+
+    return errorResponse(
+      res,
+      err.message,
+      null,
+      err.statusCode || 500
+    );
+
+  }
+
+};
+
+// -------- VALIDATE PASSWORD RESET TOKEN --------
+export const validatePasswordResetToken =
+  async (req, res) => {
+
+    try {
+
+      const result =
+        await validatePasswordResetTokenService(
+          req.params.token
+        );
+
+      return successResponse(
+        res,
+        result,
+        "Token validated"
+      );
+
+    } catch (err) {
+
+      return errorResponse(
+        res,
+        err.message,
+        null,
+        err.statusCode || 500
+      );
+
+    }
+  };
+
+// -------- VALIDATE PASSKEY RESET TOKEN --------  
+export const validatePasskeyResetToken =
+  async (req, res) => {
+
+    try {
+
+      const result =
+        await validatePasskeyResetTokenService(
+          req.params.token
+        );
+
+      return successResponse(
+        res,
+        result,
+        "Token validated"
+      );
+
+    } catch (err) {
+
+      return errorResponse(
+        res,
+        err.message,
+        null,
+        err.statusCode || 500
+      );
+
+    }
+  };
+
+// -------- FORGOT PASSWORD --------
+export const forgotPassword =
+  async (req, res) => {
+
+    try {
+
+      const { email } =
+        req.body;
+
+      await forgotPasswordService(
+        email
+      );
+
+      return successResponse(
+        res,
+        null,
+        "Password reset link sent successfully",
+        200
+      );
+
+    } catch (err) {
+
+      return errorResponse(
+        res,
+        err.message,
+        null,
+        err.statusCode || 500
+      );
+
+    }
+
+  };

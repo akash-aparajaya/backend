@@ -34,6 +34,7 @@ export const createUser = async (user_name, email, role, is_active) => {
       is_active,
       reset_token: setupToken,
       reset_token_expiry: expiry,
+      reset_token_type: "SETUP_ACCOUNT",
     },
   });
 
@@ -131,6 +132,7 @@ export const getUserById = async (id) => {
     where: { public_id: id },
     select: {
       id: true,
+      public_id: true,
       user_name: true,
       email: true,
       role: true,
