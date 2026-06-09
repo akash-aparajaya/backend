@@ -209,12 +209,31 @@ export const sendWhatsAppController = async (req, res) => {
 };
 
 /* -------- IBV controller -------- */
-export const sendIBVController = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "IBV queued successfully",
-  });
-};
+// export const sendIBVController = async (req, res) => {
+//   try {
+
+//     const context = {
+//       project_id: req.project_id,
+//       environment_id: req.environment_id,
+//       mode: req.mode,
+//     };
+
+//     const result = await ibvWorker.verify(req.body, context);
+
+//     return res.status(200).json({
+//       success: true,
+//       data: result,
+//       message: "IBV queued successfully",
+//     });
+//   } catch (error) {
+//     console.error("IBV Error:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message || "Failed to process IBV request",
+//     });
+//   }
+// };
 
 /* -------- Credit Score controller -------- */
 export const sendCreditScoreController = async (req, res) => {

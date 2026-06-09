@@ -4,7 +4,6 @@ import {
   sendSmsController,
   sendEmailController,
   sendWhatsAppController,
-  sendIBVController,
   sendCreditScoreController,
   sendPaymentGatewayController,
   sendACHController,
@@ -23,9 +22,6 @@ router.post("/v1/messages/email", validateApiKey, sendEmailController);
 router.post("/v1/messages/whatsapp", validateApiKey, sendWhatsAppController);
 
 /* ------------------------ Verification Routes ------------------------ */
-
-// IBV
-router.post("/v1/verifications/ibv", validateApiKey, sendIBVController);
 
 // Credit Score
 router.post(

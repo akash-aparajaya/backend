@@ -44,7 +44,8 @@
     "redis": "^5.12.1",
     "twilio": "^5.13.1",
     "winston": "^3.19.0",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

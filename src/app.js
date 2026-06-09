@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 
 /* ---------------- SECURITY ---------------- */
-app.use(helmet()); // Secure HTTP headers
+// app.use(helmet()); // Secure HTTP headers
 
 /* ---------------- CORS ---------------- */
 app.use(
@@ -25,8 +25,17 @@ app.use(
   }),
 );
 
+// app.use(
+//   cors({
+//     origin: ["http://localhost"],
+//     credentials: true,
+//   }),
+// );
+
+// app.use(cors());
+
 /* ---------------- BODY PARSER ---------------- */
-app.set("trust proxy", 1);
+// app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

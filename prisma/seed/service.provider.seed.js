@@ -1148,14 +1148,8 @@ const PROVIDERS = [
     base_endpoint: "https://api.loanpaymentpro.com",
     required_credential_schema: [
       {
-        key: "client_id",
-        label: "Client ID",
-        type: "text",
-        required: true,
-      },
-      {
-        key: "client_secret",
-        label: "Client Secret",
+        key: "transaction_key",
+        label: "Transaction Key",
         type: "password",
         required: true,
         is_secret: true,
