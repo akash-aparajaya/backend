@@ -1,5 +1,3 @@
-// workers/ach/index.js
-
 import { loanPaymentProProvider } from "./loan-payment-pro.js";
 import { dwollaProvider } from "./dwolla.js";
 // import { stripeACHProvider } from "./stripe-ach.js";

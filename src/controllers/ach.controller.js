@@ -70,6 +70,7 @@ export const createACHPaymentController = async (req, res) => {
 export const getACHPaymentController = async (req, res) => {
   try {
     const { paymentId } = req.params;
+    console.log(paymentId);
     const { project_id, environment_id, mode } = req;
 
     const result = await achService.getPayment(paymentId, {
@@ -78,18 +79,9 @@ export const getACHPaymentController = async (req, res) => {
       mode,
     });
 
-    return successResponse(
-      res,
-      result,
-      "Payment fetched successfully",
-    );
+    return successResponse(res, result, "Payment fetched successfully");
   } catch (err) {
-    return errorResponse(
-      res,
-      err.message,
-      null,
-      err.statusCode || 500,
-    );
+    return errorResponse(res, err.message, null, err.statusCode || 500);
   }
 };
 
@@ -98,15 +90,11 @@ export const refundACHPaymentController = async (req, res) => {
     const { paymentId } = req.params;
     const { project_id, environment_id, mode } = req;
 
-    const result = await achService.refundPayment(
-      paymentId,
-      req.body,
-      {
-        project_id,
-        environment_id,
-        mode,
-      },
-    );
+    const result = await achService.refundPayment(paymentId, req.body, {
+      project_id,
+      environment_id,
+      mode,
+    });
 
     res.json({
       success: true,
@@ -117,5 +105,53 @@ export const refundACHPaymentController = async (req, res) => {
       success: false,
       message: err.message,
     });
+  }
+};
+
+export const createDisbursementController = async (req, res) => {
+  try {
+    const { project_id, environment_id, mode } = req;
+    const { provider_slug, customer_id, payment_method_id, amount } = req.body;
+
+    const result = await achService.createDisbursement(
+      {
+        provider_slug,
+        customer_id,
+        payment_method_id,
+        amount,
+      },
+      {
+        project_id,
+        environment_id,
+        mode,
+      },
+    );
+
+    return successResponse(res, result, "Disbursement created successfully");
+  } catch (err) {
+    return errorResponse(res, err.message, null, err.statusCode || 500);
+  }
+};
+
+export const getDisbursementStatusController = async (req, res) => {
+  try {
+    const { disbursementId } = req.params;
+    const { provider_slug } = req.query;
+    const { project_id, environment_id, mode } = req;
+
+    const result = await achService.getDisbursementStatus(disbursementId, {
+      provider_slug,
+      project_id,
+      environment_id,
+      mode,
+    });
+
+    return successResponse(
+      res,
+      result,
+      "Disbursement status fetched successfully",
+    );
+  } catch (err) {
+    return errorResponse(res, err.message, null, err.statusCode || 500);
   }
 };

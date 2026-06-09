@@ -129,4 +129,60 @@ export const loanPaymentProProvider = {
       );
     }
   },
+
+  createDisbursement: async (data, credentials) => {
+    try {
+      const body = new URLSearchParams({
+        Amount: String(data.amount),
+      });
+
+      const res = await axios.post(
+        `${BASE_URL}/v2-1/payments/customers/${data.customer_id}/paymentcards/${data.payment_method_id}/disburse`,
+        body.toString(),
+        {
+          headers: {
+            TransactionKey: credentials.transaction_key,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        },
+      );
+
+      return {
+        disbursementId: res.data.TransactionId || res.data.transactionId,
+        status: res.data.Status || "processing",
+        response: res.data,
+      };
+    } catch (err) {
+      throw new Error(
+        `Loan Payment Pro createDisbursement failed: ${
+          err.response?.status || err.message
+        }`,
+      );
+    }
+  },
+
+  getDisbursementStatus: async (disbursementId, credentials) => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/v2-1/transactions/${disbursementId}`,
+        {
+          headers: {
+            TransactionKey: credentials.transaction_key,
+          },
+        },
+      );
+
+      return {
+        disbursementId,
+        status: res.data.Status || res.data.TransactionStatus,
+        response: res.data,
+      };
+    } catch (err) {
+      throw new Error(
+        `Loan Payment Pro getDisbursementStatus failed: ${
+          err.response?.status || err.message
+        }`,
+      );
+    }
+  },
 };
