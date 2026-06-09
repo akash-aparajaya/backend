@@ -64,6 +64,8 @@ model ServiceType {
 
   environment_service_providers EnvironmentServiceProvider[]
 
+  api_documentations ApiDocumentation[]
+
   @@map("service_types")
 }
 
@@ -98,7 +100,59 @@ model Provider {
 
   whatsAppQueues WhatsAppQueue[]
 
+   api_documentations ApiDocumentation[]
+
   @@map("providers")
+}
+
+// =============================================================================
+// API DOCUMENTATION
+// =============================================================================
+
+// Add this to your existing schema.prisma
+
+model ApiDocumentation {
+  id          Int    @id @default(autoincrement())
+  public_id   String @unique @default(cuid())
+  
+  // Links to existing ServiceType and Provider
+  service_type_id String
+  service_type     ServiceType @relation(fields: [service_type_id], references: [public_id])
+  
+  provider_id String?
+  provider     Provider? @relation(fields: [provider_id], references: [public_id])
+  
+  // Documentation fields 
+  name        String    // API endpoint name
+  type        String    // GET, POST, PUT, DELETE
+  url         String    // API endpoint URL
+  description String?   // Description of the API
+  
+  // Rich content from CKEditor
+  header      String?   @db.Text  // Headers documentation (HTML)
+  input       String?   @db.Text  // Request body documentation (HTML)
+  output      String?   @db.Text  // Response documentation (HTML)
+  
+  // Structured data (stored as JSON)
+  headers     Json?     // Array of {field, type, details}
+  body        Json?     // Array of {field, type, required, details}
+  response    Json?     // Array of {code, subject, details}
+  
+  // Metadata
+  order       Int       @default(0)
+  is_active   Boolean   @default(true)
+  is_deleted  Boolean   @default(false)
+  
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  created_by  String?   // User public_id
+  modified_by String?   // User public_id
+  
+  @@unique([service_type_id, provider_id, name])
+  @@index([service_type_id])
+  @@index([provider_id])
+  @@index([is_active])
+  @@map("api_documentations")
 }
 
 // =============================================================================

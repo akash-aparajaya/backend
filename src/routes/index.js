@@ -7,6 +7,7 @@ import gitTokenRoutes from "./gitToken.routes.js";
 import clientAccessiblePoint from "./access.routes.js";
 import ibv from "./ibv.routes.js";
 import ach from "./ach.routes.js";
+import apiDocsRoutes from "./apiDocs.routes.js";
 import logger from "../utils/logger.js";
 const router = express.Router();
 
@@ -85,5 +86,8 @@ router.use("/ibv", ibv);
 
 /* -------- IBV -------- */
 router.use("/ach", ach);
+
+/* -------- API DOCUMENTATION -------- */
+router.use("/docs", apiDocsRoutes);
 
 export default router;

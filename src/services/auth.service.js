@@ -244,7 +244,7 @@ export const userVerification = async (
   );
 
   if (!isValid) {
-   throw {
+    throw {
       message: "Invalid Passkey",
       statusCode: 404,
     };
@@ -332,7 +332,7 @@ export const completeSetupService = async ({
     subject: "Your Account Has Been Activated",
     html: accountActivatedTemplate({
       userName: user.user_name,
-      loginUrl: `${process.env.FRONTEND_URL}/`,
+      loginUrl: `${process.env.FRONTEND_URL}/#/`,
     }),
   });
 
@@ -518,7 +518,7 @@ export const forgotPasskeyService = async (
   });
 
   const resetUrl =
-    `${process.env.FRONTEND_URL}/reset-passkey/${token}`;
+    `${process.env.FRONTEND_URL}/#/reset-passkey/${token}`;
 
   await sendEmail({
     to: user.email,
@@ -625,7 +625,7 @@ export const forgotPasswordSelfService = async (
   });
 
   const resetUrl =
-    `${process.env.FRONTEND_URL}/forgot-password/${token}`;
+    `${process.env.FRONTEND_URL}/#/forgot-password/${token}`;
 
   const emailRes =
     await sendEmail({
@@ -754,7 +754,7 @@ export const forgotPasswordService = async (
   });
 
   const resetUrl =
-    `${process.env.FRONTEND_URL}/forgot-password/${token}`;
+    `${process.env.FRONTEND_URL}/#/forgot-password/${token}`;
 
   await sendEmail({
     to: user.email,
