@@ -95,4 +95,18 @@ router.get(
   userController.userAssignedProjectsEnvironments,
 );
 
+/* -------- GET PROFILE -------- */
+router.get(
+  "/profile",
+  verifyToken,
+  userController.getProfile,
+);
+
+/* -------- UPDATE PROFILE -------- */
+router.patch(
+  "/profile",
+  verifyToken,
+  userController.updateProfile,
+);
+
 export default router;

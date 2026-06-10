@@ -176,6 +176,10 @@ model User {
 
   phone_number String?
 
+  description String?
+  
+profile_image String?
+
   is_phone_verified Boolean @default(false)
 
   is_deleted Boolean @default(false)

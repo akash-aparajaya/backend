@@ -152,3 +152,68 @@ export const userAssignedProjectsEnvironments = async (req, res) => {
     return errorResponse(res, error.message, null, error.statusCode || 500);
   }
 };
+
+/* -------- get profile -------- */
+export const getProfile = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const user =
+      await userService.getProfile(
+        req.user.id
+      );
+
+    return successResponse(
+      res,
+      user,
+      "Profile retrieved successfully"
+    );
+
+  } catch (error) {
+
+    return errorResponse(
+      res,
+      error.message,
+      null,
+      error.statusCode || 500
+    );
+
+  }
+
+};
+
+/* -------- update profile -------- */
+export const updateProfile = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const user =
+      await userService.updateProfile(
+        req.user.id,
+        req.body
+      );
+
+    return successResponse(
+      res,
+      user,
+      "Profile updated successfully"
+    );
+
+  } catch (error) {
+
+    return errorResponse(
+      res,
+      error.message,
+      null,
+      error.statusCode || 500
+    );
+
+  }
+
+};

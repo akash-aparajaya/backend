@@ -1,12 +1,60 @@
 import prisma from "../config/prisma.js";
 
 export const getAllApiDocs = async (filters = {}) => {
-    const { search, page = 1, limit = 10 } = filters;
+    const {
+        search,
+        service_type_id,
+        provider_id,
+        is_active,
+        type,
+        page = 1,
+        limit = 10
+    } = filters;
 
     const where = {
         is_deleted: false,
+
+        ...(service_type_id && {
+            service_type_id
+        }),
+
+        ...(provider_id && {
+            provider_id
+        }),
+
+        ...(type && {
+            type
+        }),
+
+        ...(is_active !== undefined && {
+            is_active
+        }),
+
         ...(search && {
-            name: { contains: search, mode: 'insensitive' }
+            OR: [
+                {
+                    name: {
+                        contains: search,
+                        mode: "insensitive"
+                    }
+                },
+                {
+                    service_type: {
+                        name: {
+                            contains: search,
+                            mode: "insensitive"
+                        }
+                    }
+                },
+                {
+                    provider: {
+                        name: {
+                            contains: search,
+                            mode: "insensitive"
+                        }
+                    }
+                }
+            ]
         })
     };
 
@@ -17,13 +65,17 @@ export const getAllApiDocs = async (filters = {}) => {
             where,
             skip,
             take: limit,
-            orderBy: { created_at: 'desc' },
+            orderBy: {
+                created_at: "desc"
+            },
             include: {
                 service_type: true,
                 provider: true
             }
         }),
-        prisma.apiDocumentation.count({ where })
+        prisma.apiDocumentation.count({
+            where
+        })
     ]);
 
     return {

@@ -3,9 +3,24 @@ import { successResponse, errorResponse } from "../utils/response.js";
 
 export const getAllApiDocs = async (req, res) => {
     try {
-        const { search, page, limit } = req.query;
+        const {
+            search,
+            service_type_id,
+            provider_id,
+            is_active,
+            type,
+            page,
+            limit
+        } = req.query;
         const result = await apiDocsService.getAllApiDocs({
             search,
+            service_type_id,
+            provider_id,
+            type,
+            is_active:
+                is_active === undefined
+                    ? undefined
+                    : is_active === "true",
             page: page ? parseInt(page) : 1,
             limit: limit ? parseInt(limit) : 10
         });

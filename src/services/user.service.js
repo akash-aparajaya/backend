@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendEmail } from "./email.service.js";
 import { accountSetupTemplate } from "../templates/accountSetup.template.js";
+import cloudinary from "../config/cloudinary.js";
 
 /* -------- create user -------- */
 export const createUser = async (user_name, email, role, is_active) => {
@@ -82,6 +83,7 @@ export const getAllUsers = async () => {
       email: true,
       role: true,
       is_active: true,
+      profile_image: true,
     },
 
     orderBy: {
@@ -102,6 +104,7 @@ export const getAllUsers = async () => {
     email: user.email,
     role: user.role,
     is_active: user.is_active,
+    profile_image: user.profile_image,
   }));
 };
 
@@ -251,6 +254,7 @@ export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
       email: true,
       role: true,
       is_active: true,
+      profile_image: true,
 
       environmentEmployees: {
         where: { status: true },
@@ -304,6 +308,7 @@ export const getUserDetailsWithProjectsAndEnvironments = async (userId) => {
     email: user.email,
     role: user.role,
     is_active: user.is_active,
+    profile_image: user.profile_image,
     projects: Array.from(projectMap.values()),
   };
 };
@@ -556,4 +561,98 @@ export const userAssignedProjectsEnvironments = async (
   });
 
   return Array.from(projectMap.values());
+};
+
+/* -------- get profile -------- */
+export const getProfile = async (userId) => {
+
+  const user = await prisma.user.findUnique({
+    where: {
+      public_id: userId,
+    },
+    select: {
+      public_id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      phone_number: true,
+      description: true,
+      profile_image: true,
+      is_active: true,
+    },
+  });
+
+  if (!user) {
+    throw {
+      message: "User not found",
+      statusCode: 404,
+    };
+  }
+
+  return user;
+};
+
+/* -------- update profile -------- */
+export const updateProfile = async (
+  userId,
+  data
+) => {
+
+  let finalProfileImage;
+
+  // Upload image to Cloudinary if provided
+  if (
+    data.profile_image &&
+    data.profile_image.startsWith("data:")
+  ) {
+
+    const result =
+      await cloudinary.uploader.upload(
+        data.profile_image,
+        {
+          folder: "user-profile",
+        }
+      );
+
+    finalProfileImage =
+      result.secure_url;
+  }
+
+  const user =
+    await prisma.user.update({
+      where: {
+        public_id: userId,
+      },
+
+      data: {
+        ...(data.user_name !== undefined && {
+          user_name: data.user_name,
+        }),
+
+        ...(data.phone_number !== undefined && {
+          phone_number: data.phone_number,
+        }),
+
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+
+        ...(finalProfileImage && {
+          profile_image:
+            finalProfileImage,
+        }),
+      },
+
+      select: {
+        public_id: true,
+        user_name: true,
+        email: true,
+        role: true,
+        phone_number: true,
+        description: true,
+        profile_image: true,
+      },
+    });
+
+  return user;
 };
