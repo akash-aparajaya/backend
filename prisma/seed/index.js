@@ -9,7 +9,7 @@ async function main() {
 
 
   //await seedUser(prisma);
-    //  await seedProvider(prisma)
+      await seedProvider(prisma)
 
   console.log("🎉 All seeds completed");
 }
