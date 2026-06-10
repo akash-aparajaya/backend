@@ -111,22 +111,6 @@ export const createPayment = async (data, context) => {
 };
 
 // =====================================================
-// GET PAYMENT
-// =====================================================
-
-export const getPayment = async (paymentId, context) => {
-  validateContext(context);
-
-  const { record, provider } = await getProviderRecord({
-    environment_id: context.environment_id,
-    provider_slug: context.provider_slug,
-    mode: context.mode,
-  });
-
-  return provider.getPayment(paymentId, record.credentials);
-};
-
-// =====================================================
 // REFUND PAYMENT
 // =====================================================
 
@@ -142,6 +126,9 @@ export const refundPayment = async (paymentId, data, context) => {
   return provider.refundPayment(paymentId, data, record.credentials);
 };
 
+// =====================================================
+// CREATE DISBURSEMENT
+// =====================================================
 export const createDisbursement = async (data, context) => {
   validateContext(context);
 
@@ -156,20 +143,4 @@ export const createDisbursement = async (data, context) => {
   }
 
   return provider.createDisbursement(data, record.credentials);
-};
-
-export const getDisbursementStatus = async (disbursementId, context) => {
-  validateContext(context);
-
-  const { record, provider } = await getProviderRecord({
-    environment_id: context.environment_id,
-    provider_slug: context.provider_slug,
-    mode: context.mode,
-  });
-
-  if (!provider.getDisbursementStatus) {
-    throw new Error("Disbursement status not supported by this provider");
-  }
-
-  return provider.getDisbursementStatus(disbursementId, record.credentials);
 };

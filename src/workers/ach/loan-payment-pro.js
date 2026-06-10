@@ -89,22 +89,6 @@ export const loanPaymentProProvider = {
     }
   },
 
-  getPayment: async (paymentId, credentials) => {
-    try {
-      const res = await axios.get(`${BASE_URL}/v2/payments/${paymentId}`, {
-        headers: authHeaders(credentials.transaction_key),
-      });
-
-      return res.data;
-    } catch (err) {
-      throw new Error(
-        `Loan Payment Pro getPayment failed: ${
-          err.response?.status || err.message
-        }`,
-      );
-    }
-  },
-
   refundPayment: async (paymentId, data, credentials) => {
     try {
       const body = new URLSearchParams({
@@ -155,31 +139,6 @@ export const loanPaymentProProvider = {
     } catch (err) {
       throw new Error(
         `Loan Payment Pro createDisbursement failed: ${
-          err.response?.status || err.message
-        }`,
-      );
-    }
-  },
-
-  getDisbursementStatus: async (disbursementId, credentials) => {
-    try {
-      const res = await axios.get(
-        `${BASE_URL}/v2-1/transactions/${disbursementId}`,
-        {
-          headers: {
-            TransactionKey: credentials.transaction_key,
-          },
-        },
-      );
-
-      return {
-        disbursementId,
-        status: res.data.Status || res.data.TransactionStatus,
-        response: res.data,
-      };
-    } catch (err) {
-      throw new Error(
-        `Loan Payment Pro getDisbursementStatus failed: ${
           err.response?.status || err.message
         }`,
       );
