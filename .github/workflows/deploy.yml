@@ -3,7 +3,7 @@ name: Deploy apinexus Backend
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   deploy:
