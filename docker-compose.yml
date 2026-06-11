@@ -1,0 +1,12 @@
+name: apinexus-backend
+services:
+  backend:
+    container_name: apinexus-backend
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "4530:3500"
+    env_file:
+      - .env
+    restart: always
