@@ -153,10 +153,10 @@ export const getUserById = async (id) => {
     };
   }
 
-  if(user.last_login_at){
-    user.last_login_at =  user.last_login_at.toLocaleString("en-IN", {
-  timeZone: "Asia/Kolkata",
-});
+  if (user.last_login_at) {
+    user.last_login_at = user.last_login_at.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+    });
   }
 
   return user;
@@ -461,6 +461,14 @@ export const userAssignedProjectsEnvironments = async (
     where: {
       user_id,
       status: true,
+      project: {
+        is_active: true,
+        is_deleted: false,
+      },
+      environment: {
+        is_active: true,
+        is_deleted: false,
+      }
     },
     include: {
       project: {
