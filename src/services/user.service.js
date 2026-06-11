@@ -153,6 +153,12 @@ export const getUserById = async (id) => {
     };
   }
 
+  if(user.last_login_at){
+    user.last_login_at =  user.last_login_at.toLocaleString("en-IN", {
+  timeZone: "Asia/Kolkata",
+});
+  }
+
   return user;
 };
 
@@ -174,15 +180,14 @@ export const getStatsData = async () => {
     prisma.project.count({
       where: {
         is_active: true,
+        is_deleted: false,
       },
     }),
   ]);
 
-  if (!adminCount || !activeServices || !activeProjects) {
-    throw {
-      message: "Failed to get stats data",
-      statusCode: 500,
-    };
+  console.log(adminCount, activeServices, activeProjects);
+  if (adminCount == null || activeServices == null || activeProjects == null) {
+    throw new Error("Failed to get stats data");
   }
 
   return {
@@ -232,6 +237,11 @@ export const deleteUser = async (userId) => {
   const user = await prisma.user.update({
     where: { public_id: userId },
     data: { is_deleted: true },
+  });
+
+  await prisma.environmentEmployee.updateMany({
+    where: { user_id: userId },
+    data: { status: false },
   });
 
   if (!user) {
@@ -565,7 +575,6 @@ export const userAssignedProjectsEnvironments = async (
 
 /* -------- get profile -------- */
 export const getProfile = async (userId) => {
-
   const user = await prisma.user.findUnique({
     where: {
       public_id: userId,
@@ -575,6 +584,7 @@ export const getProfile = async (userId) => {
       user_name: true,
       email: true,
       role: true,
+      last_login_at: true,
       phone_number: true,
       description: true,
       profile_image: true,
@@ -593,66 +603,51 @@ export const getProfile = async (userId) => {
 };
 
 /* -------- update profile -------- */
-export const updateProfile = async (
-  userId,
-  data
-) => {
-
+export const updateProfile = async (userId, data) => {
   let finalProfileImage;
 
   // Upload image to Cloudinary if provided
-  if (
-    data.profile_image &&
-    data.profile_image.startsWith("data:")
-  ) {
+  if (data.profile_image && data.profile_image.startsWith("data:")) {
+    const result = await cloudinary.uploader.upload(data.profile_image, {
+      folder: "user-profile",
+    });
 
-    const result =
-      await cloudinary.uploader.upload(
-        data.profile_image,
-        {
-          folder: "user-profile",
-        }
-      );
-
-    finalProfileImage =
-      result.secure_url;
+    finalProfileImage = result.secure_url;
   }
 
-  const user =
-    await prisma.user.update({
-      where: {
-        public_id: userId,
-      },
+  const user = await prisma.user.update({
+    where: {
+      public_id: userId,
+    },
 
-      data: {
-        ...(data.user_name !== undefined && {
-          user_name: data.user_name,
-        }),
+    data: {
+      ...(data.user_name !== undefined && {
+        user_name: data.user_name,
+      }),
 
-        ...(data.phone_number !== undefined && {
-          phone_number: data.phone_number,
-        }),
+      ...(data.phone_number !== undefined && {
+        phone_number: data.phone_number,
+      }),
 
-        ...(data.description !== undefined && {
-          description: data.description,
-        }),
+      ...(data.description !== undefined && {
+        description: data.description,
+      }),
 
-        ...(finalProfileImage && {
-          profile_image:
-            finalProfileImage,
-        }),
-      },
+      ...(finalProfileImage && {
+        profile_image: finalProfileImage,
+      }),
+    },
 
-      select: {
-        public_id: true,
-        user_name: true,
-        email: true,
-        role: true,
-        phone_number: true,
-        description: true,
-        profile_image: true,
-      },
-    });
+    select: {
+      public_id: true,
+      user_name: true,
+      email: true,
+      role: true,
+      phone_number: true,
+      description: true,
+      profile_image: true,
+    },
+  });
 
   return user;
 };

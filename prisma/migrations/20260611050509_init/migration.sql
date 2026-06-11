@@ -25,6 +25,7 @@ CREATE TABLE "service_types" (
     "description" TEXT,
     "service_base_endpoint" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "is_failover" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "service_types_pkey" PRIMARY KEY ("id")
 );
@@ -44,19 +45,50 @@ CREATE TABLE "providers" (
 );
 
 -- CreateTable
+CREATE TABLE "api_documentations" (
+    "id" SERIAL NOT NULL,
+    "public_id" TEXT NOT NULL,
+    "service_type_id" TEXT NOT NULL,
+    "provider_id" TEXT,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "description" TEXT,
+    "header" TEXT,
+    "input" TEXT,
+    "output" TEXT,
+    "headers" JSONB,
+    "body" JSONB,
+    "response" JSONB,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "is_deleted" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_by" TEXT,
+    "modified_by" TEXT,
+
+    CONSTRAINT "api_documentations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
     "public_id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
+    "credential_passkey" TEXT,
     "user_name" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'ADMIN',
     "phone_number" TEXT,
+    "description" TEXT,
+    "profile_image" TEXT,
     "is_phone_verified" BOOLEAN NOT NULL DEFAULT false,
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "reset_token" TEXT,
     "reset_token_expiry" TIMESTAMP(3),
+    "reset_token_type" TEXT,
     "refresh_token_hash" TEXT,
     "refresh_token_expires_at" TIMESTAMP(3),
     "last_login_at" TIMESTAMP(3),
@@ -110,6 +142,8 @@ CREATE TABLE "environment_service_providers" (
     "provider_slug" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "sort_order" INTEGER NOT NULL DEFAULT 1,
+    "last_failed_at" TIMESTAMP(3),
+    "last_error_message" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -198,6 +232,7 @@ CREATE TABLE "EmailQueue" (
     "template_name" TEXT,
     "status" "QueueStatus" NOT NULL DEFAULT 'PENDING',
     "priority" "PrioritySegment" NOT NULL DEFAULT 'MEDIUM',
+    "priority_value" INTEGER NOT NULL DEFAULT 2,
     "idempotency_key" TEXT,
     "attempts" INTEGER NOT NULL DEFAULT 0,
     "max_attempts" INTEGER NOT NULL DEFAULT 2,
@@ -229,6 +264,7 @@ CREATE TABLE "WhatsAppQueue" (
     "template_name" TEXT,
     "status" "QueueStatus" NOT NULL DEFAULT 'PENDING',
     "priority" "PrioritySegment" NOT NULL DEFAULT 'MEDIUM',
+    "priority_value" INTEGER NOT NULL DEFAULT 2,
     "idempotency_key" TEXT,
     "attempts" INTEGER NOT NULL DEFAULT 0,
     "max_attempts" INTEGER NOT NULL DEFAULT 2,
@@ -262,10 +298,22 @@ CREATE UNIQUE INDEX "providers_public_id_key" ON "providers"("public_id");
 CREATE UNIQUE INDEX "providers_slug_key" ON "providers"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_public_id_key" ON "users"("public_id");
+CREATE UNIQUE INDEX "api_documentations_public_id_key" ON "api_documentations"("public_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE INDEX "api_documentations_service_type_id_idx" ON "api_documentations"("service_type_id");
+
+-- CreateIndex
+CREATE INDEX "api_documentations_provider_id_idx" ON "api_documentations"("provider_id");
+
+-- CreateIndex
+CREATE INDEX "api_documentations_is_active_idx" ON "api_documentations"("is_active");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "api_documentations_service_type_id_provider_id_name_key" ON "api_documentations"("service_type_id", "provider_id", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_public_id_key" ON "users"("public_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "projects_public_id_key" ON "projects"("public_id");
@@ -365,6 +413,12 @@ CREATE INDEX "WhatsAppQueue_environment_id_idx" ON "WhatsAppQueue"("environment_
 
 -- AddForeignKey
 ALTER TABLE "providers" ADD CONSTRAINT "providers_service_type_id_fkey" FOREIGN KEY ("service_type_id") REFERENCES "service_types"("public_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "api_documentations" ADD CONSTRAINT "api_documentations_service_type_id_fkey" FOREIGN KEY ("service_type_id") REFERENCES "service_types"("public_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "api_documentations" ADD CONSTRAINT "api_documentations_provider_id_fkey" FOREIGN KEY ("provider_id") REFERENCES "providers"("public_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("public_id") ON DELETE RESTRICT ON UPDATE CASCADE;
