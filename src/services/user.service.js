@@ -46,7 +46,7 @@ export const createUser = async (user_name, email, role, is_active) => {
     };
   }
 
-  const setupUrl = `${process.env.FRONTEND_URL}/setup-account/${setupToken}`;
+  const setupUrl = `${process.env.FRONTEND_URL}/#/setup-account/${setupToken}`;
 
   const html = accountSetupTemplate({
     userName: user_name,
