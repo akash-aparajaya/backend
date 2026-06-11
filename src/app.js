@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import morgan from "morgan";
 import helmet from "helmet";
 import compression from "compression";
@@ -10,7 +9,6 @@ import routes from "./routes/index.js";
 import { smsCron, emailCron } from "./workers/cron.js";
 import logger from "./utils/logger.js";
 
-dotenv.config();
 
 const app = express();
 

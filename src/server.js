@@ -1,3 +1,4 @@
+import "dotenv/config";
 process.env.TZ = "Asia/Kolkata";
 import app, { initCronJobs } from "./app.js";
 import prisma from "./config/prisma.js";
