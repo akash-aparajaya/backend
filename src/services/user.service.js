@@ -623,6 +623,11 @@ export const updateProfile = async (userId, data) => {
     finalProfileImage = result.secure_url;
   }
 
+  // Image removed
+  if (data.profile_image === "") {
+    finalProfileImage = "";
+  }
+
   const user = await prisma.user.update({
     where: {
       public_id: userId,
@@ -641,7 +646,7 @@ export const updateProfile = async (userId, data) => {
         description: data.description,
       }),
 
-      ...(finalProfileImage && {
+      ...(finalProfileImage !== undefined && {
         profile_image: finalProfileImage,
       }),
     },
